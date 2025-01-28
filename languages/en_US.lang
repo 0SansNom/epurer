@@ -1,0 +1,8 @@
+# English Language File
+LANG_CONFIRM="Do you want to "
+LANG_CONFIRMATION=" [y/N]: "
+LANG_WARNING="[WARNING] "
+LANG_ERROR="[ERROR] "
+LANG_SUCCESS="Success: "
+LANG_ABORTED="Action aborted."
+LANG_CLEANUP_COMPLETED="Cleanup completed!"
