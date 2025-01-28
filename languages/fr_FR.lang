@@ -1,0 +1,8 @@
+# French Language File
+LANG_CONFIRM="Souhaitez-vous "
+LANG_CONFIRMATION=" [o/N]: "
+LANG_WARNING="[AVERTISSEMENT] "
+LANG_ERROR="[ERREUR] "
+LANG_SUCCESS="Succès: "
+LANG_ABORTED="Action annulée."
+LANG_CLEANUP_COMPLETED="Nettoyage terminé!"
