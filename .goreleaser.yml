@@ -1,0 +1,65 @@
+project_name: mac-dev-clean
+
+before:
+  hooks:
+    - go mod tidy
+    - go mod download
+
+builds:
+  - main: ./cmd/mac-dev-clean
+    binary: mac-dev-clean
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
+
+archives:
+  - format: tar.gz
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - README.md
+      - LICENSE
+      - Makefile
+
+checksum:
+  name_template: "{{ .ProjectName }}_{{ .Version }}_checksums.txt"
+
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+      - Merge pull request
+      - Merge branch
+
+brews:
+  - name: mac-dev-clean
+    homepage: https://github.com/0SansNom/mac-dev-clean
+    description: "🧹 Intelligent developer cache cleaner for macOS"
+    license: MIT
+
+    repository:
+      owner: 0SansNom
+      name: homebrew-tap
+      branch: main
+
+    folder: Formula
+
+    install: |
+      bin.install "mac-dev-clean"
+
+    test: |
+      system "#{bin}/mac-dev-clean", "--version"

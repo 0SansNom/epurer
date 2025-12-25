@@ -1,0 +1,30 @@
+# Binaries
+/mac-dev-clean
+bin/
+dist/
+*.exe
+*.dll
+*.dylib
+*.so
+
+# Test files
+*.test
+coverage.txt
+coverage.html
+*.out
+
+# IDE
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Go
+vendor/
+*.log
+
+# OS
+.Spotlight-V100
+.Trashes
