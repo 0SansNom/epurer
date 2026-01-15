@@ -5,12 +5,13 @@ Intelligent cache cleaner for macOS developers. Reclaim disk space by cleaning d
 ## Installation
 
 ```bash
+# Homebrew (recommended)
+brew tap 0SansNom/tap
+brew install epurer
+
 # From source
 git clone https://github.com/0SansNom/epurer.git
 cd epurer && make build && make install
-
-# Or with Go (after pushing to GitHub)
-go install github.com/0SansNom/epurer/cmd/epurer@latest
 ```
 
 ## Quick Start
@@ -64,7 +65,7 @@ epurer ui              # Interactive mode
 
 ```
 ╔═══════════════════════════════════════╗
-║             🧹 Épurer v1.0            ║
+║             🧹 Épurer v1.1            ║
 ║  Intelligent cache cleanup for macOS  ║
 ╚═══════════════════════════════════════╝
 
