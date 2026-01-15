@@ -89,7 +89,7 @@ func NewReporter(verbose bool) *Reporter {
 
 // PrintHeader prints the application header
 func (r *Reporter) PrintHeader() {
-	title := "🧹 Épurer v1.0"
+	title := "🧹 Épurer v1.1"
 	subtitle := "Intelligent cache cleanup for macOS"
 
 	content := lipgloss.JoinVertical(
