@@ -12,6 +12,7 @@ import (
 	"github.com/0SansNom/epurer/internal/config"
 	"github.com/0SansNom/epurer/internal/detector"
 	"github.com/0SansNom/epurer/internal/reporter"
+	"github.com/0SansNom/epurer/internal/tui"
 )
 
 var (
@@ -46,6 +47,7 @@ Xcode, Android, Flutter, TensorFlow, PyTorch, and more.`,
 		newDetectCmd(),
 		newReportCmd(),
 		newSmartCmd(),
+		newTUICmd(),
 	)
 
 	if err := rootCmd.Execute(); err != nil {
@@ -119,6 +121,22 @@ func newSmartCmd() *cobra.Command {
 		Long: `Automatically detects installed development tools and performs an intelligent cleanup
 using conservative settings. Perfect for quick, safe cleanup.`,
 		RunE: runSmart,
+	}
+
+	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "Show what would be cleaned without actually deleting")
+
+	return cmd
+}
+
+// newTUICmd creates the interactive TUI command
+func newTUICmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "ui",
+		Short: "Launch interactive TUI mode",
+		Long: `Launch an interactive terminal user interface for selecting and cleaning
+development caches. Navigate with arrow keys, toggle selection with space,
+and confirm with enter.`,
+		RunE: runTUI,
 	}
 
 	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "Show what would be cleaned without actually deleting")
@@ -456,6 +474,65 @@ func runSmart(cmd *cobra.Command, args []string) error {
 	rep.PrintCleanResults(allResults, dryRun)
 
 	return nil
+}
+
+// runTUI executes the interactive TUI command
+func runTUI(cmd *cobra.Command, args []string) error {
+	ctx := context.Background()
+
+	// Show loading message
+	fmt.Print("\033[?25l") // Hide cursor
+	fmt.Print("🔍 Scanning system for cleanable items...")
+
+	// Use conservative level for TUI mode
+	cfg := config.NewDefaultConfig()
+	cfg.CleanLevel = config.Standard
+	cfg.Verbose = verbose
+
+	// Initialize cleaners
+	cleaners, err := initAllCleaners()
+	if err != nil {
+		fmt.Print("\033[?25h") // Show cursor
+		fmt.Println()
+		return fmt.Errorf("failed to initialize cleaners: %v", err)
+	}
+
+	// Scan all domains with progress indicator
+	targetsByDomain := make(map[string][]cleaner.CleanTarget)
+	spinChars := []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}
+	spinIdx := 0
+
+	for _, c := range cleaners {
+		// Update spinner
+		fmt.Printf("\r%s Scanning %s...   ", spinChars[spinIdx%len(spinChars)], c.Name())
+		spinIdx++
+
+		isDetected, err := c.Detect(ctx)
+		if err != nil || !isDetected {
+			continue
+		}
+
+		targets, err := c.Scan(ctx, cfg)
+		if err != nil {
+			continue
+		}
+
+		if len(targets) > 0 {
+			targetsByDomain[c.Name()] = targets
+		}
+	}
+
+	// Clear loading line and show cursor
+	fmt.Print("\r\033[K") // Clear line
+	fmt.Print("\033[?25h") // Show cursor
+
+	if len(targetsByDomain) == 0 {
+		fmt.Println("✅ Nothing to clean!")
+		return nil
+	}
+
+	// Launch TUI
+	return tui.Run(targetsByDomain, dryRun)
 }
 
 // Helper functions

@@ -14,6 +14,7 @@ Built with Go for maximum performance and zero runtime dependencies.
 - **💾 Dry Run Mode** - Preview changes before executing
 - **⚡ Fast & Efficient** - Written in Go with concurrent operations
 - **🔒 Safe by Default** - Only removes easily rebuildable caches
+- **🖥️ Interactive TUI** - Beautiful terminal UI for selecting what to clean
 
 ## 🎯 Supported Technologies
 
@@ -102,6 +103,9 @@ epurer report
 # Smart automatic cleanup (conservative, dry-run)
 epurer smart --dry-run
 
+# Interactive TUI mode
+epurer ui
+
 # Clean with default settings
 epurer clean
 
@@ -161,6 +165,25 @@ Flags:
 
 Automatically detects tools and performs a safe, conservative cleanup.
 
+#### `ui` - Interactive TUI Mode
+
+```bash
+epurer ui [flags]
+
+Flags:
+      --dry-run  Show what would be cleaned without deleting
+```
+
+Launch an interactive terminal user interface for selecting what to clean.
+
+**Controls:**
+- `↑/↓` - Navigate between domains
+- `Space` - Toggle selection
+- `a` - Select all
+- `n` - Select none
+- `Enter` - Confirm and clean
+- `q` - Quit
+
 ### Safety Levels
 
 - **🟢 Conservative** - Only cleans completely safe items (caches, logs)
@@ -187,47 +210,49 @@ epurer report --verbose
 
 # Smart cleanup without confirmation
 epurer smart
+
+# Interactive mode with dry-run
+epurer ui --dry-run
 ```
 
 ## 📊 Sample Output
 
 ```text
-╔═══════════════════════════════════════════╗
-║   🧹 Épurer v1.0                          ║
-║   Intelligent cache cleanup for macOS     ║
-╚═══════════════════════════════════════════╝
+╔═══════════════════════════════════════╗
+║             🧹 Épurer v1.0            ║
+║  Intelligent cache cleanup for macOS  ║
+╚═══════════════════════════════════════╝
 
 📊 Cleanup Estimation:
 
-┌──────────┬────────┬─────────┬────────┬───────────┐
-│  DOMAIN  │ ITEMS  │  SIZE   │ SAFETY │  IMPACT   │
-├──────────┼────────┼─────────┼────────┼───────────┤
-│ Frontend │  1,234 │ 12.5 GB │ 🟢 🟡  │ High      │
-│ Mobile   │     15 │ 45.2 GB │ 🟢 🟡  │ Very High │
-│ DevOps   │     42 │ 23.1 GB │ 🟢 🟡  │ High      │
-│ Backend  │    567 │  3.4 GB │ 🟢     │ Medium    │
-├──────────┼────────┼─────────┼────────┼───────────┤
-│    Total │  1,858 │ 84.2 GB │        │           │
-└──────────┴────────┴─────────┴────────┴───────────┘
+ DOMAIN       ITEMS      SIZE  SAFETY    IMPACT
+──────────────────────────────────────────────────
+ Frontend     1,234   12.5 GB  Safe Mod  High
+ Mobile          15   45.2 GB  Safe Mod  Very High
+ DevOps          42   23.1 GB  Safe Mod  High
+ Backend        567    3.4 GB  Safe      Medium
+──────────────────────────────────────────────────
+ Total        1,858   84.2 GB
 
 🔐 Safety Levels:
 
-  🟢 Safe - No risk, easily rebuilt (caches, logs)
-  🟡 Moderate - Rebuild needed (dependencies, build outputs)
-  🔴 Dangerous - Potential data loss (backups, databases)
+  Safe - No risk, easily rebuilt (caches, logs)
+  Mod  - Rebuild needed (dependencies, build outputs)
+  Risk - Potential data loss (backups, databases)
 ```
 
 ## 🏗️ Architecture
 
 ```text
 epurer/
-├── cmd/epurer/    # CLI entry point
+├── cmd/epurer/           # CLI entry point
 ├── internal/
 │   ├── cleaner/          # Domain-specific cleaners
 │   ├── config/           # Configuration and types
 │   ├── detector/         # Tool detection
-│   ├── reporter/         # Output formatting
-│   └── scanner/          # Concurrent file scanning
+│   ├── reporter/         # Output formatting (Lip Gloss)
+│   ├── scanner/          # Concurrent file scanning
+│   └── tui/              # Interactive TUI (Bubble Tea)
 └── pkg/utils/            # Utility functions
 ```
 
@@ -272,7 +297,7 @@ This tool deletes files from your system. While it's designed to be safe and onl
 Built with:
 
 - [Cobra](https://github.com/spf13/cobra) - CLI framework
-- [tablewriter](https://github.com/olekukonko/tablewriter) - Beautiful tables
-- [progressbar](https://github.com/schollz/progressbar) - Progress bars
+- [Bubble Tea](https://github.com/charmbracelet/bubbletea) - TUI framework
+- [Lip Gloss](https://github.com/charmbracelet/lipgloss) - Style definitions
+- [Bubbles](https://github.com/charmbracelet/bubbles) - TUI components
 - [go-humanize](https://github.com/dustin/go-humanize) - Human-readable formatting
-- [color](https://github.com/fatih/color) - Colorful output

@@ -5,41 +5,108 @@ import (
 	"os"
 	"strings"
 
-	"github.com/fatih/color"
-	"github.com/olekukonko/tablewriter"
-	"github.com/schollz/progressbar/v3"
+	"github.com/charmbracelet/bubbles/progress"
+	"github.com/charmbracelet/lipgloss"
 
 	"github.com/0SansNom/epurer/internal/cleaner"
 	"github.com/0SansNom/epurer/internal/config"
 	"github.com/0SansNom/epurer/pkg/utils"
 )
 
+// Styles using Lip Gloss
+var (
+	// Colors
+	primaryColor   = lipgloss.Color("#7C3AED") // Purple
+	secondaryColor = lipgloss.Color("#06B6D4") // Cyan
+	successColor   = lipgloss.Color("#10B981") // Green
+	warningColor   = lipgloss.Color("#F59E0B") // Amber
+	dangerColor    = lipgloss.Color("#EF4444") // Red
+	mutedColor     = lipgloss.Color("#6B7280") // Gray
+
+	// Text styles
+	titleStyle = lipgloss.NewStyle().
+			Bold(true).
+			Foreground(primaryColor)
+
+	subtitleStyle = lipgloss.NewStyle().
+			Foreground(secondaryColor)
+
+	successStyle = lipgloss.NewStyle().
+			Foreground(successColor)
+
+	warningStyle = lipgloss.NewStyle().
+			Foreground(warningColor)
+
+	errorStyle = lipgloss.NewStyle().
+			Foreground(dangerColor)
+
+	infoStyle = lipgloss.NewStyle().
+			Foreground(secondaryColor)
+
+	mutedStyle = lipgloss.NewStyle().
+			Foreground(mutedColor)
+
+	// Box styles
+	headerBox = lipgloss.NewStyle().
+			Border(lipgloss.DoubleBorder()).
+			BorderForeground(primaryColor).
+			Padding(0, 2).
+			Align(lipgloss.Center)
+
+	// Table styles
+	tableHeaderStyle = lipgloss.NewStyle().
+				Bold(true).
+				Foreground(lipgloss.Color("#FFFFFF")).
+				Background(primaryColor).
+				Padding(0, 1)
+
+	tableCellStyle = lipgloss.NewStyle().
+			Padding(0, 1)
+
+	tableFooterStyle = lipgloss.NewStyle().
+				Bold(true).
+				Foreground(primaryColor).
+				Padding(0, 1)
+)
+
 // Reporter handles all output formatting and display
 type Reporter struct {
-	verbose bool
+	verbose  bool
+	progress progress.Model
 }
 
 // NewReporter creates a new Reporter
 func NewReporter(verbose bool) *Reporter {
+	p := progress.New(
+		progress.WithDefaultGradient(),
+		progress.WithWidth(40),
+	)
 	return &Reporter{
-		verbose: verbose,
+		verbose:  verbose,
+		progress: p,
 	}
 }
 
 // PrintHeader prints the application header
 func (r *Reporter) PrintHeader() {
-	header := `
-╔═══════════════════════════════════════════╗
-║   🧹 Épurer v1.0                          ║
-║   Intelligent cache cleanup for macOS     ║
-╚═══════════════════════════════════════════╝
-`
-	fmt.Println(color.CyanString(header))
+	title := "🧹 Épurer v1.0"
+	subtitle := "Intelligent cache cleanup for macOS"
+
+	content := lipgloss.JoinVertical(
+		lipgloss.Center,
+		titleStyle.Render(title),
+		subtitleStyle.Render(subtitle),
+	)
+
+	box := headerBox.Render(content)
+	fmt.Println()
+	fmt.Println(box)
+	fmt.Println()
 }
 
 // PrintDetection prints the detection results
 func (r *Reporter) PrintDetection(detected map[string]bool) {
-	fmt.Println(color.YellowString("\n🔍 Detecting development tools...\n"))
+	fmt.Println(warningStyle.Render("\n🔍 Detecting development tools...\n"))
 
 	detectionMap := map[string]string{
 		"frontend": "Frontend (Node.js, npm, yarn)",
@@ -52,10 +119,10 @@ func (r *Reporter) PrintDetection(detected map[string]bool) {
 
 	for domain, description := range detectionMap {
 		if detected[domain] {
-			fmt.Printf("  %s %s\n", color.GreenString("✓"), description)
+			fmt.Printf("  %s %s\n", successStyle.Render("✓"), description)
 		} else {
 			if r.verbose {
-				fmt.Printf("  %s %s\n", color.RedString("✗"), description)
+				fmt.Printf("  %s %s\n", errorStyle.Render("✗"), mutedStyle.Render(description))
 			}
 		}
 	}
@@ -65,13 +132,20 @@ func (r *Reporter) PrintDetection(detected map[string]bool) {
 
 // PrintEstimation prints a table of estimated cleanup sizes
 func (r *Reporter) PrintEstimation(targetsByDomain map[string][]cleaner.CleanTarget) {
-	fmt.Println(color.YellowString("📊 Cleanup Estimation:\n"))
-
-	table := tablewriter.NewWriter(os.Stdout)
-	table.Header([]string{"Domain", "Items", "Size", "Safety", "Impact"})
+	fmt.Println(warningStyle.Render("📊 Cleanup Estimation:\n"))
 
 	totalSize := int64(0)
 	totalItems := 0
+
+	// Collect data first
+	type rowData struct {
+		domain  string
+		items   string
+		size    string
+		safety  string
+		impact  string
+	}
+	var rows []rowData
 
 	// Sort domains for consistent output
 	domains := []string{"Frontend", "Backend", "Mobile", "DevOps", "Data/ML", "System"}
@@ -90,43 +164,87 @@ func (r *Reporter) PrintEstimation(targetsByDomain map[string][]cleaner.CleanTar
 			safetyIcons[target.Safety] = true
 		}
 
-		// Build safety string
+		// Build safety string (simple text, no emoji for alignment)
 		safetyStr := ""
 		if safetyIcons[config.Safe] {
-			safetyStr += "🟢 "
+			safetyStr += "Safe "
 		}
 		if safetyIcons[config.Moderate] {
-			safetyStr += "🟡 "
+			safetyStr += "Mod "
 		}
 		if safetyIcons[config.Dangerous] {
-			safetyStr += "🔴 "
+			safetyStr += "Risk "
 		}
 
-		// Determine impact
 		impact := getImpactString(domainSize)
 
-		table.Append([]string{
-			domain,
-			utils.FormatCount(len(targets)),
-			utils.FormatBytes(domainSize),
-			safetyStr,
-			impact,
+		rows = append(rows, rowData{
+			domain:  domain,
+			items:   utils.FormatCount(len(targets)),
+			size:    utils.FormatBytes(domainSize),
+			safety:  strings.TrimSpace(safetyStr),
+			impact:  impact,
 		})
 
 		totalSize += domainSize
 		totalItems += len(targets)
 	}
 
-	// Footer with totals
-	table.Footer([]string{
-		"Total",
-		utils.FormatCount(totalItems),
-		utils.FormatBytes(totalSize),
-		"",
-		"",
-	})
+	// Build table with lipgloss
+	headerStyle := lipgloss.NewStyle().Bold(true).Foreground(primaryColor).Padding(0, 1)
+	cellStyle := lipgloss.NewStyle().Padding(0, 1)
 
-	table.Render()
+	// Print header
+	fmt.Printf("%s%s%s%s%s\n",
+		headerStyle.Width(12).Render("DOMAIN"),
+		headerStyle.Width(8).Align(lipgloss.Right).Render("ITEMS"),
+		headerStyle.Width(10).Align(lipgloss.Right).Render("SIZE"),
+		headerStyle.Width(10).Render("SAFETY"),
+		headerStyle.Width(10).Render("IMPACT"),
+	)
+
+	// Print separator
+	fmt.Println(mutedStyle.Render(strings.Repeat("─", 50)))
+
+	// Print rows
+	for _, row := range rows {
+		impactStyled := row.impact
+		switch row.impact {
+		case "Very High":
+			impactStyled = errorStyle.Render(row.impact)
+		case "High":
+			impactStyled = warningStyle.Render(row.impact)
+		case "Medium":
+			impactStyled = infoStyle.Render(row.impact)
+		default:
+			impactStyled = mutedStyle.Render(row.impact)
+		}
+
+		safetyStyled := row.safety
+		if strings.Contains(row.safety, "Safe") {
+			safetyStyled = successStyle.Render(row.safety)
+		} else if strings.Contains(row.safety, "Risk") {
+			safetyStyled = errorStyle.Render(row.safety)
+		}
+
+		fmt.Printf("%s%s%s%s%s\n",
+			cellStyle.Width(12).Render(row.domain),
+			cellStyle.Width(8).Align(lipgloss.Right).Render(row.items),
+			cellStyle.Width(10).Align(lipgloss.Right).Render(row.size),
+			cellStyle.Width(10).Render(safetyStyled),
+			cellStyle.Width(10).Render(impactStyled),
+		)
+	}
+
+	// Print footer
+	fmt.Println(mutedStyle.Render(strings.Repeat("─", 50)))
+	fmt.Printf("%s%s%s%s%s\n",
+		titleStyle.Padding(0, 1).Width(12).Render("Total"),
+		successStyle.Padding(0, 1).Width(8).Align(lipgloss.Right).Render(utils.FormatCount(totalItems)),
+		successStyle.Padding(0, 1).Width(10).Align(lipgloss.Right).Render(utils.FormatBytes(totalSize)),
+		cellStyle.Width(10).Render(""),
+		cellStyle.Width(10).Render(""),
+	)
 	fmt.Println()
 }
 
@@ -136,42 +254,37 @@ func (r *Reporter) PrintTargetDetails(targets []cleaner.CleanTarget) {
 		return
 	}
 
-	fmt.Println(color.YellowString("\n📋 Detailed Breakdown:\n"))
+	fmt.Println(warningStyle.Render("\n📋 Detailed Breakdown:\n"))
 
 	for _, target := range targets {
 		safetyIcon := target.Safety.Icon()
 		fmt.Printf("  %s %s - %s (%s)\n",
 			safetyIcon,
 			target.Description,
-			utils.FormatBytes(target.SizeBytes),
-			target.Path,
+			successStyle.Render(utils.FormatBytes(target.SizeBytes)),
+			mutedStyle.Render(target.Path),
 		)
 	}
 
 	fmt.Println()
 }
 
-// PrintCleaningProgress creates and returns a progress bar
-func (r *Reporter) PrintCleaningProgress(total int, description string) *progressbar.ProgressBar {
-	return progressbar.NewOptions(total,
-		progressbar.OptionSetDescription(description),
-		progressbar.OptionSetWidth(40),
-		progressbar.OptionShowCount(),
-		progressbar.OptionSetTheme(progressbar.Theme{
-			Saucer:        "█",
-			SaucerPadding: "░",
-			BarStart:      "[",
-			BarEnd:        "]",
-		}),
-	)
+// PrintProgress prints a progress indicator
+func (r *Reporter) PrintProgress(current, total int, description string) {
+	percent := float64(current) / float64(total)
+	bar := r.progress.ViewAs(percent)
+	fmt.Printf("\r%s %s [%d/%d]", description, bar, current, total)
+	if current == total {
+		fmt.Println()
+	}
 }
 
 // PrintCleanResults prints the results of a cleaning operation
 func (r *Reporter) PrintCleanResults(results []cleaner.CleanResult, dryRun bool) {
 	if dryRun {
-		fmt.Println(color.BlueString("\n✨ Dry Run Complete - No files were deleted\n"))
+		fmt.Println(infoStyle.Render("\n✨ Dry Run Complete - No files were deleted\n"))
 	} else {
-		fmt.Println(color.GreenString("\n✅ Cleaning Complete!\n"))
+		fmt.Println(successStyle.Render("\n✅ Cleaning Complete!\n"))
 	}
 
 	// Calculate statistics
@@ -188,28 +301,33 @@ func (r *Reporter) PrintCleanResults(results []cleaner.CleanResult, dryRun bool)
 		}
 	}
 
-	// Print summary
-	fmt.Printf("Space %s: %s\n",
-		getActionVerb(dryRun),
-		color.GreenString(utils.FormatBytes(totalFreed)),
+	// Print summary with styled output
+	actionVerb := getActionVerb(dryRun)
+
+	fmt.Printf("  💾 Space %s: %s\n",
+		actionVerb,
+		successStyle.Render(utils.FormatBytes(totalFreed)),
 	)
-	fmt.Printf("Items %s: %s\n",
-		getActionVerb(dryRun),
-		color.GreenString(utils.FormatCount(totalFiles)),
+	fmt.Printf("  📁 Items %s: %s\n",
+		actionVerb,
+		successStyle.Render(utils.FormatCount(totalFiles)),
 	)
 
 	if failures > 0 {
-		fmt.Printf("Failures: %s\n",
-			color.RedString(utils.FormatCount(failures)),
+		fmt.Printf("  ❌ Failures: %s\n",
+			errorStyle.Render(utils.FormatCount(failures)),
 		)
 	}
 
 	// Print failures if any
 	if failures > 0 && r.verbose {
-		fmt.Println(color.RedString("\n❌ Failed Items:\n"))
+		fmt.Println(errorStyle.Render("\n❌ Failed Items:\n"))
 		for _, result := range results {
 			if !result.Success {
-				fmt.Printf("  • %s: %v\n", result.Target.Path, result.Error)
+				fmt.Printf("  • %s: %v\n",
+					mutedStyle.Render(result.Target.Path),
+					errorStyle.Render(result.Error.Error()),
+				)
 			}
 		}
 	}
@@ -219,27 +337,28 @@ func (r *Reporter) PrintCleanResults(results []cleaner.CleanResult, dryRun bool)
 
 // PrintWarning prints a warning message
 func (r *Reporter) PrintWarning(message string) {
-	fmt.Println(color.YellowString("⚠️  " + message))
+	fmt.Println(warningStyle.Render("⚠️  " + message))
 }
 
 // PrintError prints an error message
 func (r *Reporter) PrintError(message string) {
-	fmt.Println(color.RedString("❌ " + message))
+	fmt.Println(errorStyle.Render("❌ " + message))
 }
 
 // PrintSuccess prints a success message
 func (r *Reporter) PrintSuccess(message string) {
-	fmt.Println(color.GreenString("✅ " + message))
+	fmt.Println(successStyle.Render("✅ " + message))
 }
 
 // PrintInfo prints an info message
 func (r *Reporter) PrintInfo(message string) {
-	fmt.Println(color.CyanString("ℹ️  " + message))
+	fmt.Println(infoStyle.Render("ℹ️  " + message))
 }
 
 // AskConfirmation asks the user for confirmation
 func (r *Reporter) AskConfirmation(message string) bool {
-	fmt.Printf("\n%s [y/N]: ", color.YellowString(message))
+	prompt := warningStyle.Render(message + " [y/N]: ")
+	fmt.Printf("\n%s", prompt)
 
 	var response string
 	fmt.Scanln(&response)
@@ -250,10 +369,15 @@ func (r *Reporter) AskConfirmation(message string) bool {
 
 // PrintSafetyLegend prints the safety level legend
 func (r *Reporter) PrintSafetyLegend() {
-	fmt.Println(color.YellowString("\n🔐 Safety Levels:\n"))
-	fmt.Printf("  🟢 %s - No risk, easily rebuilt (caches, logs)\n", color.GreenString("Safe"))
-	fmt.Printf("  🟡 %s - Rebuild needed (dependencies, build outputs)\n", color.YellowString("Moderate"))
-	fmt.Printf("  🔴 %s - Potential data loss (backups, databases)\n", color.RedString("Dangerous"))
+	fmt.Println(warningStyle.Render("\n🔐 Safety Levels:\n"))
+
+	safeBox := successStyle.Render("Safe")
+	moderateBox := warningStyle.Render("Mod")
+	dangerBox := errorStyle.Render("Risk")
+
+	fmt.Printf("  %s - No risk, easily rebuilt (caches, logs)\n", safeBox)
+	fmt.Printf("  %s  - Rebuild needed (dependencies, build outputs)\n", moderateBox)
+	fmt.Printf("  %s - Potential data loss (backups, databases)\n", dangerBox)
 	fmt.Println()
 }
 
@@ -261,9 +385,9 @@ func (r *Reporter) PrintSafetyLegend() {
 
 func getImpactString(size int64) string {
 	const (
-		low      = 500 * 1024 * 1024        // 500 MB
-		medium   = 5 * 1024 * 1024 * 1024   // 5 GB
-		high     = 20 * 1024 * 1024 * 1024  // 20 GB
+		low    = 500 * 1024 * 1024       // 500 MB
+		medium = 5 * 1024 * 1024 * 1024  // 5 GB
+		high   = 20 * 1024 * 1024 * 1024 // 20 GB
 	)
 
 	switch {
@@ -284,3 +408,6 @@ func getActionVerb(dryRun bool) string {
 	}
 	return "freed"
 }
+
+// Ensure Reporter doesn't use os.Stdout directly for tests
+var _ = os.Stdout
