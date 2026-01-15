@@ -9,9 +9,9 @@ import (
 	"github.com/olekukonko/tablewriter"
 	"github.com/schollz/progressbar/v3"
 
-	"github.com/0SansNom/mac-dev-clean/internal/cleaner"
-	"github.com/0SansNom/mac-dev-clean/internal/config"
-	"github.com/0SansNom/mac-dev-clean/pkg/utils"
+	"github.com/0SansNom/epurer/internal/cleaner"
+	"github.com/0SansNom/epurer/internal/config"
+	"github.com/0SansNom/epurer/pkg/utils"
 )
 
 // Reporter handles all output formatting and display
@@ -30,7 +30,7 @@ func NewReporter(verbose bool) *Reporter {
 func (r *Reporter) PrintHeader() {
 	header := `
 ╔═══════════════════════════════════════════╗
-║   🧹 Mac Developer Cleaner v1.0           ║
+║   🧹 Épurer v1.0                          ║
 ║   Intelligent cache cleanup for macOS     ║
 ╚═══════════════════════════════════════════╝
 `

@@ -1,4 +1,4 @@
-# 🧹 Mac Developer Cleaner
+# 🧹 Épurer
 
 A powerful, intelligent CLI tool for cleaning development caches and temporary files on macOS.
 
@@ -76,8 +76,8 @@ Built with Go for maximum performance and zero runtime dependencies.
 ### From Source
 
 ```bash
-git clone https://github.com/0SansNom/mac-dev-clean.git
-cd mac-dev-clean
+git clone https://github.com/0SansNom/epurer.git
+cd epurer
 make build
 make install  # Requires sudo
 ```
@@ -85,7 +85,7 @@ make install  # Requires sudo
 ### Using Go
 
 ```bash
-go install github.com/0SansNom/mac-dev-clean/cmd/mac-dev-clean@latest
+go install github.com/0SansNom/epurer/cmd/epurer@latest
 ```
 
 ## 📖 Usage
@@ -94,22 +94,22 @@ go install github.com/0SansNom/mac-dev-clean/cmd/mac-dev-clean@latest
 
 ```bash
 # Detect installed tools
-mac-dev-clean detect
+epurer detect
 
 # Generate a cleanup report
-mac-dev-clean report
+epurer report
 
 # Smart automatic cleanup (conservative, dry-run)
-mac-dev-clean smart --dry-run
+epurer smart --dry-run
 
 # Clean with default settings
-mac-dev-clean clean
+epurer clean
 
 # Clean specific domains
-mac-dev-clean clean --domain frontend,backend
+epurer clean --domain frontend,backend
 
 # Aggressive clean (includes moderate and dangerous items)
-mac-dev-clean clean --level aggressive
+epurer clean --level aggressive
 ```
 
 ### Commands
@@ -117,7 +117,7 @@ mac-dev-clean clean --level aggressive
 #### `detect` - Detect Development Tools
 
 ```bash
-mac-dev-clean detect
+epurer detect
 ```
 
 Scans your system and lists all detected development tools.
@@ -125,7 +125,7 @@ Scans your system and lists all detected development tools.
 #### `report` - Generate Cleanup Report
 
 ```bash
-mac-dev-clean report [flags]
+epurer report [flags]
 
 Flags:
   -l, --level string    Clean level: conservative|standard|aggressive (default "standard")
@@ -138,7 +138,7 @@ Generates a detailed report of what can be cleaned without actually deleting any
 #### `clean` - Execute Cleanup
 
 ```bash
-mac-dev-clean clean [flags]
+epurer clean [flags]
 
 Flags:
       --dry-run         Show what would be cleaned without deleting
@@ -153,7 +153,7 @@ Performs the actual cleanup operation.
 #### `smart` - Smart Automatic Cleanup
 
 ```bash
-mac-dev-clean smart [flags]
+epurer smart [flags]
 
 Flags:
       --dry-run  Show what would be cleaned without deleting
@@ -171,29 +171,29 @@ Automatically detects tools and performs a safe, conservative cleanup.
 
 ```bash
 # Dry-run to see what would be cleaned
-mac-dev-clean clean --dry-run
+epurer clean --dry-run
 
 # Clean only frontend caches
-mac-dev-clean clean --domain frontend
+epurer clean --domain frontend
 
 # Aggressive clean (requires confirmation)
-mac-dev-clean clean --level aggressive
+epurer clean --level aggressive
 
 # Non-interactive clean
-mac-dev-clean clean --interactive=false
+epurer clean --interactive=false
 
 # Verbose report showing all files
-mac-dev-clean report --verbose
+epurer report --verbose
 
 # Smart cleanup without confirmation
-mac-dev-clean smart
+epurer smart
 ```
 
 ## 📊 Sample Output
 
 ```text
 ╔═══════════════════════════════════════════╗
-║   🧹 Mac Developer Cleaner v1.0           ║
+║   🧹 Épurer v1.0                          ║
 ║   Intelligent cache cleanup for macOS     ║
 ╚═══════════════════════════════════════════╝
 
@@ -220,8 +220,8 @@ mac-dev-clean smart
 ## 🏗️ Architecture
 
 ```text
-mac-dev-clean/
-├── cmd/mac-dev-clean/    # CLI entry point
+epurer/
+├── cmd/epurer/    # CLI entry point
 ├── internal/
 │   ├── cleaner/          # Domain-specific cleaners
 │   ├── config/           # Configuration and types

@@ -4,7 +4,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/0SansNom/mac-dev-clean/pkg/utils"
+	"github.com/0SansNom/epurer/pkg/utils"
 )
 
 // StackDetector detects installed development tools and frameworks

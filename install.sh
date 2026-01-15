@@ -1,13 +1,13 @@
 #!/bin/bash
 set -e
 
-# Mac Developer Cleaner Installation Script
+# Épurer Installation Script
 
-REPO="0SansNom/mac-dev-clean"
+REPO="0SansNom/epurer"
 INSTALL_DIR="/usr/local/bin"
-BINARY_NAME="mac-dev-clean"
+BINARY_NAME="epurer"
 
-echo "🧹 Mac Developer Cleaner - Installation Script"
+echo "🧹 Épurer - Installation Script"
 echo ""
 
 # Check if running on macOS

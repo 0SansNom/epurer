@@ -8,10 +8,10 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/prenomnom/mac-dev-clean/internal/cleaner"
-	"github.com/prenomnom/mac-dev-clean/internal/config"
-	"github.com/prenomnom/mac-dev-clean/internal/detector"
-	"github.com/prenomnom/mac-dev-clean/internal/reporter"
+	"github.com/0SansNom/epurer/internal/cleaner"
+	"github.com/0SansNom/epurer/internal/config"
+	"github.com/0SansNom/epurer/internal/detector"
+	"github.com/0SansNom/epurer/internal/reporter"
 )
 
 var (
@@ -27,9 +27,9 @@ var (
 
 func main() {
 	rootCmd := &cobra.Command{
-		Use:   "mac-dev-clean",
-		Short: "🧹 Mac Developer Cleaner - Intelligent cache cleanup",
-		Long: `Mac Developer Cleaner intelligently scans and cleans development caches,
+		Use:   "epurer",
+		Short: "🧹 Épurer - Intelligent cache cleanup for macOS",
+		Long: `Épurer intelligently scans and cleans development caches,
 build artifacts, and temporary files on macOS.
 
 Supports: Node.js, Python, Java, Go, Rust, PHP, Ruby, Docker, Kubernetes,

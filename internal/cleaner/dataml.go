@@ -5,9 +5,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/0SansNom/mac-dev-clean/internal/config"
-	"github.com/0SansNom/mac-dev-clean/internal/scanner"
-	"github.com/0SansNom/mac-dev-clean/pkg/utils"
+	"github.com/0SansNom/epurer/internal/config"
+	"github.com/0SansNom/epurer/internal/scanner"
+	"github.com/0SansNom/epurer/pkg/utils"
 )
 
 // DataMLCleaner handles Data Science and ML cleanup (Conda, Jupyter, TensorFlow, PyTorch, etc.)

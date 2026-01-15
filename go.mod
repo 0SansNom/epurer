@@ -1,4 +1,4 @@
-module github.com/0SansNom/mac-dev-clean
+module github.com/0SansNom/epurer
 
 go 1.24.2
 

@@ -3,7 +3,7 @@ package cleaner
 import (
 	"context"
 
-	"github.com/0SansNom/mac-dev-clean/internal/config"
+	"github.com/0SansNom/epurer/internal/config"
 )
 
 // CleanTarget represents a single item that can be cleaned

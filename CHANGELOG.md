@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Initial release of Mac Developer Cleaner
+- Initial release of Épurer
 - Smart detection of development tools and frameworks
 - Concurrent filesystem scanning for high performance
 - Support for multiple technology stacks:
@@ -40,4 +40,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ⚡ Written in Go for maximum performance
 - 🔒 Safe by default - only targets rebuildable caches
 
-[1.0.0]: https://github.com/0SansNom/mac-dev-clean/releases/tag/v1.0.0
+[1.0.0]: https://github.com/0SansNom/epurer/releases/tag/v1.0.0

@@ -1,9 +1,9 @@
 #!/bin/bash
 set -e
 
-# Mac Developer Cleaner - Release Script
+# Épurer- Release Script
 
-echo "🚀 Mac Developer Cleaner - Release Script"
+echo "🚀 Épurer- Release Script"
 echo ""
 
 # Check if we're on main branch
@@ -64,6 +64,6 @@ echo ""
 echo "Next steps:"
 echo "  1. Review changes: git show $NEW_VERSION"
 echo "  2. Push to GitHub: git push origin main --tags"
-echo "  3. Create GitHub release at: https://github.com/0SansNom/mac-dev-clean/releases/new"
+echo "  3. Create GitHub release at: https://github.com/0SansNom/epurer/releases/new"
 echo "  4. Run goreleaser: goreleaser release --clean"
 echo ""

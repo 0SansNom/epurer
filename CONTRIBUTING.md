@@ -1,11 +1,11 @@
-# Contributing to Mac Developer Cleaner
+# Contributing to Épurer
 
-Thank you for your interest in contributing to Mac Developer Cleaner! This document provides guidelines for contributing to the project.
+Thank you for your interest in contributing to Épurer! This document provides guidelines for contributing to the project.
 
 ## Getting Started
 
 1. Fork the repository
-2. Clone your fork: `git clone https://github.com/YOUR_USERNAME/mac-dev-clean.git`
+2. Clone your fork: `git clone https://github.com/YOUR_USERNAME/epurer.git`
 3. Create a new branch: `git checkout -b feature/your-feature-name`
 4. Make your changes
 5. Test your changes: `make test`
@@ -40,8 +40,8 @@ make lint
 ## Project Structure
 
 ```text
-mac-dev-clean/
-├── cmd/mac-dev-clean/    # CLI entry point
+epurer/
+├── cmd/epurer/    # CLI entry point
 ├── internal/
 │   ├── cleaner/          # Domain-specific cleaners
 │   ├── config/           # Configuration and types
@@ -64,7 +64,7 @@ To add support for a new technology or domain:
    - `Clean(ctx context.Context, targets []CleanTarget, dryRun bool) ([]CleanResult, error)` - Execute cleanup
 
 3. Add factory function (e.g., `NewYourCleaner()`)
-4. Register in `cmd/mac-dev-clean/main.go` in `initAllCleaners()`
+4. Register in `cmd/epurer/main.go` in `initAllCleaners()`
 5. Add tests
 6. Update documentation
 
@@ -75,8 +75,8 @@ package cleaner
 
 import (
     "context"
-    "github.com/0SansNom/mac-dev-clean/internal/config"
-    "github.com/0SansNom/mac-dev-clean/internal/scanner"
+    "github.com/0SansNom/epurer/internal/config"
+    "github.com/0SansNom/epurer/internal/scanner"
 )
 
 type YourCleaner struct {

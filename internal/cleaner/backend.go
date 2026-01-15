@@ -5,9 +5,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/0SansNom/mac-dev-clean/internal/config"
-	"github.com/0SansNom/mac-dev-clean/internal/scanner"
-	"github.com/0SansNom/mac-dev-clean/pkg/utils"
+	"github.com/0SansNom/epurer/internal/config"
+	"github.com/0SansNom/epurer/internal/scanner"
+	"github.com/0SansNom/epurer/pkg/utils"
 )
 
 // BackendCleaner handles backend development cleanup (Python, Java, Go, Rust, PHP, Ruby)

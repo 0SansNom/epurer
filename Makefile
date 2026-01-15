@@ -2,15 +2,15 @@
 
 # Build binary
 build:
-	@echo "🔨 Building mac-dev-clean..."
+	@echo "🔨 Building epurer..."
 	@mkdir -p bin
-	@go build -o bin/mac-dev-clean ./cmd/mac-dev-clean
-	@echo "✅ Build complete: bin/mac-dev-clean"
+	@go build -o bin/epurer ./cmd/epurer
+	@echo "✅ Build complete: bin/epurer"
 
 # Install to /usr/local/bin
 install: build
 	@echo "📦 Installing to /usr/local/bin..."
-	@sudo cp bin/mac-dev-clean /usr/local/bin/
+	@sudo cp bin/epurer /usr/local/bin/
 	@echo "✅ Installation complete"
 
 # Run tests
@@ -26,15 +26,15 @@ clean:
 
 # Run detect command
 run-detect: build
-	@./bin/mac-dev-clean detect
+	@./bin/epurer detect
 
 # Run report command
 run-report: build
-	@./bin/mac-dev-clean report
+	@./bin/epurer report
 
 # Run smart dry-run
 run-smart: build
-	@./bin/mac-dev-clean smart --dry-run
+	@./bin/epurer smart --dry-run
 
 # Format code
 fmt:
@@ -54,7 +54,7 @@ release:
 
 # Show help
 help:
-	@echo "Mac Developer Cleaner - Makefile targets:"
+	@echo "Épurer - Makefile targets:"
 	@echo ""
 	@echo "  make build       - Build the binary"
 	@echo "  make install     - Install to /usr/local/bin (requires sudo)"

@@ -7,9 +7,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/0SansNom/mac-dev-clean/internal/config"
-	"github.com/0SansNom/mac-dev-clean/internal/scanner"
-	"github.com/0SansNom/mac-dev-clean/pkg/utils"
+	"github.com/0SansNom/epurer/internal/config"
+	"github.com/0SansNom/epurer/internal/scanner"
+	"github.com/0SansNom/epurer/pkg/utils"
 )
 
 // DevOpsCleaner handles DevOps cleanup (Docker, Kubernetes, Terraform, Cloud CLIs)

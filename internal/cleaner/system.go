@@ -7,8 +7,8 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"github.com/0SansNom/mac-dev-clean/internal/config"
-	"github.com/0SansNom/mac-dev-clean/pkg/utils"
+	"github.com/0SansNom/epurer/internal/config"
+	"github.com/0SansNom/epurer/pkg/utils"
 )
 
 // SystemCleaner handles system-level cleanup operations

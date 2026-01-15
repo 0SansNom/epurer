@@ -1,4 +1,4 @@
-project_name: mac-dev-clean
+project_name: epurer
 
 before:
   hooks:
@@ -6,8 +6,8 @@ before:
     - go mod download
 
 builds:
-  - main: ./cmd/mac-dev-clean
-    binary: mac-dev-clean
+  - main: ./cmd/epurer
+    binary: epurer
     env:
       - CGO_ENABLED=0
     goos:
@@ -46,8 +46,8 @@ changelog:
       - Merge branch
 
 brews:
-  - name: mac-dev-clean
-    homepage: https://github.com/0SansNom/mac-dev-clean
+  - name: epurer
+    homepage: https://github.com/0SansNom/epurer
     description: "🧹 Intelligent developer cache cleaner for macOS"
     license: MIT
 
@@ -59,7 +59,7 @@ brews:
     folder: Formula
 
     install: |
-      bin.install "mac-dev-clean"
+      bin.install "epurer"
 
     test: |
-      system "#{bin}/mac-dev-clean", "--version"
+      system "#{bin}/epurer", "--version"
