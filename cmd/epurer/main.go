@@ -35,7 +35,7 @@ build artifacts, and temporary files on macOS.
 
 Supports: Node.js, Python, Java, Go, Rust, PHP, Ruby, Docker, Kubernetes,
 Xcode, Android, Flutter, TensorFlow, PyTorch, and more.`,
-		Version: "1.0.0",
+		Version: "1.1.0",
 	}
 
 	// Global flags
