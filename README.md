@@ -1,303 +1,94 @@
 # 🧹 Épurer
 
-A powerful, intelligent CLI tool for cleaning development caches and temporary files on macOS.
+Intelligent cache cleaner for macOS developers. Reclaim disk space by cleaning development caches safely.
 
-Built with Go for maximum performance and zero runtime dependencies.
-
-## ✨ Features
-
-- **🔍 Smart Detection** - Automatically detects installed development tools
-- **🚀 Concurrent Scanning** - Fast parallel filesystem scanning
-- **🛡️ Safety Levels** - Conservative, Standard, and Aggressive cleaning modes
-- **📊 Detailed Reports** - Beautiful tables showing what can be cleaned
-- **🎯 Domain-Specific** - Targeted cleaning for different tech stacks
-- **💾 Dry Run Mode** - Preview changes before executing
-- **⚡ Fast & Efficient** - Written in Go with concurrent operations
-- **🔒 Safe by Default** - Only removes easily rebuildable caches
-- **🖥️ Interactive TUI** - Beautiful terminal UI for selecting what to clean
-
-## 🎯 Supported Technologies
-
-### Frontend Development
-
-- Node.js (`node_modules`, npm cache, yarn cache, pnpm store)
-- Build outputs (dist, build, .next, out)
-- Bundler caches (Vite, Webpack, Parcel, Turbo)
-- Testing (coverage, .nyc_output)
-- Linters (.eslintcache)
-- Storybook
-
-### Backend Development
-
-- **Python**: `__pycache__`, pip cache, Poetry cache, pytest, mypy, tox
-- **Java**: Maven repository, Gradle cache, target folders
-- **Go**: Build cache, module cache
-- **Rust**: Cargo cache, target folders
-- **PHP**: Composer cache, vendor folders
-- **Ruby**: Gem cache, Bundler cache
-
-### Mobile Development
-
-- **iOS/Xcode**: DerivedData, Archives, Device Support, Simulators
-- **Android**: Build folders, Gradle cache, SDK cache, AVD
-- **Flutter**: .dart_tool, build folders
-- **CocoaPods**: Cache
-
-### DevOps
-
-- **Docker**: Dangling images, stopped containers, build cache, unused volumes
-- **Kubernetes**: kubectl cache, Minikube
-- **Terraform**: .terraform folders
-- **Cloud CLIs**: AWS CLI cache, Helm cache
-- **Vagrant**: Boxes
-
-### Data Science / ML
-
-- **Conda**: Package cache, environments
-- **Jupyter**: Runtime files, checkpoints
-- **TensorFlow/Keras**: Datasets and models cache
-- **PyTorch**: Hub cache (pretrained models)
-- **Hugging Face**: Transformers cache
-- **Weights & Biases**: Cache and experiment logs
-- **MLflow**: Experiment runs
-
-### System
-
-- Trash
-- System caches
-- System logs
-- Temporary files
-- DNS cache
-- Homebrew cache
-- Launchpad database
-- iOS backups
-
-## 🚀 Installation
-
-### From Source
+## Installation
 
 ```bash
+# From source
 git clone https://github.com/0SansNom/epurer.git
-cd epurer
-make build
-make install  # Requires sudo
-```
+cd epurer && make build && make install
 
-### Using Go
-
-```bash
+# Or with Go
 go install github.com/0SansNom/epurer/cmd/epurer@latest
 ```
 
-## 📖 Usage
-
-### Quick Start
+## Quick Start
 
 ```bash
-# Detect installed tools
-epurer detect
-
-# Generate a cleanup report
-epurer report
-
-# Smart automatic cleanup (conservative, dry-run)
-epurer smart --dry-run
-
-# Interactive TUI mode
-epurer ui
-
-# Clean with default settings
-epurer clean
-
-# Clean specific domains
-epurer clean --domain frontend,backend
-
-# Aggressive clean (includes moderate and dangerous items)
-epurer clean --level aggressive
+epurer detect          # See what's installed
+epurer report          # Preview what can be cleaned
+epurer smart --dry-run # Safe automatic cleanup (preview)
+epurer ui              # Interactive mode
 ```
 
-### Commands
+## Commands
 
-#### `detect` - Detect Development Tools
+| Command | Description |
+|---------|-------------|
+| `detect` | Detect installed development tools |
+| `report` | Generate cleanup report |
+| `clean` | Execute cleanup |
+| `smart` | Automatic safe cleanup |
+| `ui` | Interactive TUI mode |
+
+### Options
 
 ```bash
-epurer detect
+--dry-run              # Preview without deleting
+--level <level>        # conservative, standard, aggressive
+--domain <domains>     # frontend, backend, mobile, devops, dataml, system
+--verbose              # Detailed output
 ```
 
-Scans your system and lists all detected development tools.
+## Supported Technologies
 
-#### `report` - Generate Cleanup Report
+| Domain | Tools |
+|--------|-------|
+| **Frontend** | Node.js, npm, yarn, pnpm, Vite, Webpack, Next.js |
+| **Backend** | Python, Java, Go, Rust, PHP, Ruby, Maven, Gradle |
+| **Mobile** | Xcode, Android Studio, Flutter, CocoaPods |
+| **DevOps** | Docker, Kubernetes, Terraform, Helm |
+| **Data/ML** | Conda, Jupyter, TensorFlow, PyTorch, Hugging Face |
+| **System** | Caches, logs, Homebrew, Trash, iOS backups |
 
-```bash
-epurer report [flags]
+## Safety Levels
 
-Flags:
-  -l, --level string    Clean level: conservative|standard|aggressive (default "standard")
-  -d, --domain strings  Domains to scan (comma-separated, empty = all)
-  -v, --verbose         Show detailed breakdown
+| Level | Description |
+|-------|-------------|
+| `Safe` | Caches, logs - no risk |
+| `Mod` | Dependencies, builds - rebuild needed |
+| `Risk` | Backups, data - potential loss |
+
+## Example Output
+
 ```
-
-Generates a detailed report of what can be cleaned without actually deleting anything.
-
-#### `clean` - Execute Cleanup
-
-```bash
-epurer clean [flags]
-
-Flags:
-      --dry-run         Show what would be cleaned without deleting
-  -i, --interactive     Ask for confirmation (default true)
-  -l, --level string    Clean level: conservative|standard|aggressive (default "standard")
-  -d, --domain strings  Domains to clean (comma-separated, empty = all)
-  -v, --verbose         Verbose output
-```
-
-Performs the actual cleanup operation.
-
-#### `smart` - Smart Automatic Cleanup
-
-```bash
-epurer smart [flags]
-
-Flags:
-      --dry-run  Show what would be cleaned without deleting
-```
-
-Automatically detects tools and performs a safe, conservative cleanup.
-
-#### `ui` - Interactive TUI Mode
-
-```bash
-epurer ui [flags]
-
-Flags:
-      --dry-run  Show what would be cleaned without deleting
-```
-
-Launch an interactive terminal user interface for selecting what to clean.
-
-**Controls:**
-- `↑/↓` - Navigate between domains
-- `Space` - Toggle selection
-- `a` - Select all
-- `n` - Select none
-- `Enter` - Confirm and clean
-- `q` - Quit
-
-### Safety Levels
-
-- **🟢 Conservative** - Only cleans completely safe items (caches, logs)
-- **🟡 Standard** - Includes items that need rebuild (node_modules, build outputs)
-- **🔴 Aggressive** - Everything including potentially dangerous items (backups, data)
-
-### Examples
-
-```bash
-# Dry-run to see what would be cleaned
-epurer clean --dry-run
-
-# Clean only frontend caches
-epurer clean --domain frontend
-
-# Aggressive clean (requires confirmation)
-epurer clean --level aggressive
-
-# Non-interactive clean
-epurer clean --interactive=false
-
-# Verbose report showing all files
-epurer report --verbose
-
-# Smart cleanup without confirmation
-epurer smart
-
-# Interactive mode with dry-run
-epurer ui --dry-run
-```
-
-## 📊 Sample Output
-
-```text
 ╔═══════════════════════════════════════╗
 ║             🧹 Épurer v1.0            ║
 ║  Intelligent cache cleanup for macOS  ║
 ╚═══════════════════════════════════════╝
 
-📊 Cleanup Estimation:
-
  DOMAIN       ITEMS      SIZE  SAFETY    IMPACT
 ──────────────────────────────────────────────────
  Frontend     1,234   12.5 GB  Safe Mod  High
  Mobile          15   45.2 GB  Safe Mod  Very High
- DevOps          42   23.1 GB  Safe Mod  High
  Backend        567    3.4 GB  Safe      Medium
 ──────────────────────────────────────────────────
- Total        1,858   84.2 GB
-
-🔐 Safety Levels:
-
-  Safe - No risk, easily rebuilt (caches, logs)
-  Mod  - Rebuild needed (dependencies, build outputs)
-  Risk - Potential data loss (backups, databases)
+ Total        1,816   61.1 GB
 ```
 
-## 🏗️ Architecture
-
-```text
-epurer/
-├── cmd/epurer/           # CLI entry point
-├── internal/
-│   ├── cleaner/          # Domain-specific cleaners
-│   ├── config/           # Configuration and types
-│   ├── detector/         # Tool detection
-│   ├── reporter/         # Output formatting (Lip Gloss)
-│   ├── scanner/          # Concurrent file scanning
-│   └── tui/              # Interactive TUI (Bubble Tea)
-└── pkg/utils/            # Utility functions
-```
-
-## 🛠️ Development
+## Interactive Mode
 
 ```bash
-# Build
-make build
-
-# Run tests
-make test
-
-# Format code
-make fmt
-
-# Lint
-make lint
-
-# Clean build artifacts
-make clean
+epurer ui
 ```
 
-## 📝 License
+Controls: `↑↓` navigate · `Space` toggle · `a` all · `n` none · `Enter` confirm · `q` quit
 
-MIT License - see LICENSE file for details
+## License
 
-## 🤝 Contributing
+MIT
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+## Credits
 
-## ⚠️ Disclaimer
-
-This tool deletes files from your system. While it's designed to be safe and only target cache/temporary files, please:
-
-- Use `--dry-run` first to preview changes
-- Start with conservative mode
-- Make sure you have backups of important data
-- Review what will be deleted before confirming
-
-## 🙏 Credits
-
-Built with:
-
-- [Cobra](https://github.com/spf13/cobra) - CLI framework
-- [Bubble Tea](https://github.com/charmbracelet/bubbletea) - TUI framework
-- [Lip Gloss](https://github.com/charmbracelet/lipgloss) - Style definitions
-- [Bubbles](https://github.com/charmbracelet/bubbles) - TUI components
-- [go-humanize](https://github.com/dustin/go-humanize) - Human-readable formatting
+Built with [Cobra](https://github.com/spf13/cobra), [Bubble Tea](https://github.com/charmbracelet/bubbletea), [Lip Gloss](https://github.com/charmbracelet/lipgloss)
