@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  test:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+
+      - name: Install dependencies
+        run: go mod download
+
+      - name: Run tests
+        run: go test -v ./...
+
+      - name: Build
+        run: go build -v ./cmd/epurer
+
+  build:
+    runs-on: macos-latest
+    needs: test
+    strategy:
+      matrix:
+        goos: [darwin]
+        goarch: [amd64, arm64]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+
+      - name: Build binary
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+        run: |
+          go build -ldflags="-s -w" -o epurer-${{ matrix.goos }}-${{ matrix.goarch }} ./cmd/epurer
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: epurer-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: epurer-${{ matrix.goos }}-${{ matrix.goarch }}
