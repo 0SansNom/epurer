@@ -7,6 +7,7 @@ Intelligent cache cleaner for macOS developers. Reclaim disk space by cleaning d
 ```bash
 # Homebrew (recommended)
 brew tap 0SansNom/tap
+brew trust --tap 0sansnom/tap  # required once: Homebrew won't load formulae from third-party taps until trusted
 brew install epurer
 
 # From source
