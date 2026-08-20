@@ -10,6 +10,7 @@ import (
 
 	"github.com/0SansNom/epurer/internal/cleaner"
 	"github.com/0SansNom/epurer/internal/config"
+	"github.com/0SansNom/epurer/internal/purge"
 	"github.com/0SansNom/epurer/pkg/utils"
 )
 
@@ -246,6 +247,63 @@ func (r *Reporter) PrintEstimation(targetsByDomain map[string][]cleaner.CleanTar
 		cellStyle.Width(10).Render(""),
 	)
 	fmt.Println()
+}
+
+// PrintPurgeReport prints a table of projects found by `purge`, grouped with
+// their artifact kinds and preselection status.
+func (r *Reporter) PrintPurgeReport(projects []purge.Project) {
+	fmt.Println(warningStyle.Render("📦 Project Artifacts Found:\n"))
+
+	var totalSize int64
+	var totalArtifacts int
+	var preselected int
+
+	headerStyle := lipgloss.NewStyle().Bold(true).Foreground(primaryColor).Padding(0, 1)
+	cellStyle := lipgloss.NewStyle().Padding(0, 1)
+
+	fmt.Printf("%s%s%s%s\n",
+		headerStyle.Width(28).Render("PROJECT"),
+		headerStyle.Width(16).Render("TYPE"),
+		headerStyle.Width(10).Align(lipgloss.Right).Render("SIZE"),
+		headerStyle.Width(28).Render("ARTIFACTS"),
+	)
+	fmt.Println(mutedStyle.Render(strings.Repeat("─", 82)))
+
+	for _, p := range projects {
+		kinds := make([]string, 0, len(p.Artifacts))
+		anySelected := false
+		for _, a := range p.Artifacts {
+			kinds = append(kinds, a.Kind)
+			if a.Selected {
+				anySelected = true
+				preselected++
+			}
+		}
+
+		name := p.Name
+		if anySelected {
+			name = successStyle.Render(name)
+		}
+
+		fmt.Printf("%s%s%s%s\n",
+			cellStyle.Width(28).Render(name),
+			cellStyle.Width(16).Render(p.Type),
+			cellStyle.Width(10).Align(lipgloss.Right).Render(utils.FormatBytes(p.TotalSize)),
+			cellStyle.Width(28).Render(strings.Join(kinds, ", ")),
+		)
+
+		totalSize += p.TotalSize
+		totalArtifacts += len(p.Artifacts)
+	}
+
+	fmt.Println(mutedStyle.Render(strings.Repeat("─", 82)))
+	fmt.Printf("%s%s%s\n",
+		titleStyle.Padding(0, 1).Width(28).Render(fmt.Sprintf("%d projects", len(projects))),
+		cellStyle.Width(16).Render(""),
+		successStyle.Padding(0, 1).Width(10).Align(lipgloss.Right).Render(utils.FormatBytes(totalSize)),
+	)
+	fmt.Printf("\n%s\n\n", mutedStyle.Render(fmt.Sprintf(
+		"%d artifacts total, %d preselected (older than min-age)", totalArtifacts, preselected)))
 }
 
 // PrintTargetDetails prints detailed information about targets

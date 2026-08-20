@@ -97,20 +97,21 @@ const (
 
 // Model is the main Bubble Tea model
 type Model struct {
-	state       State
-	list        list.Model
-	items       []CleanItem
-	spinner     spinner.Model
-	progress    progress.Model
-	cleaning    bool
-	cleanIndex  int
-	totalItems  int
-	cleanedSize int64
-	dryRun      bool
-	quitting    bool
-	err         error
-	width       int
-	height      int
+	state          State
+	list           list.Model
+	items          []CleanItem
+	spinner        spinner.Model
+	progress       progress.Model
+	cleaning       bool
+	cleanIndex     int
+	totalItems     int
+	cleanedSize    int64
+	pendingTargets []cleaner.CleanTarget
+	dryRun         bool
+	quitting       bool
+	err            error
+	width          int
+	height         int
 }
 
 // NewModel creates a new TUI model
@@ -235,11 +236,17 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case "y", "Y":
 				m.state = StateCleaning
 				m.cleaning = true
-				// Count total items
+				// Flatten every selected item's targets into a single queue
 				for _, item := range m.items {
 					if item.selected {
-						m.totalItems += len(item.targets)
+						m.pendingTargets = append(m.pendingTargets, item.targets...)
 					}
+				}
+				m.totalItems = len(m.pendingTargets)
+				if m.totalItems == 0 {
+					m.state = StateDone
+					m.cleaning = false
+					return m, nil
 				}
 				return m, m.cleanNext()
 			case "n", "N", "q", "ctrl+c":
@@ -268,7 +275,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, cmd
 
 	case cleanedMsg:
-		m.cleanedSize += msg.size
+		if msg.err == nil {
+			m.cleanedSize += msg.size
+		}
 		m.cleanIndex++
 		if m.cleanIndex >= m.totalItems {
 			m.state = StateDone
@@ -286,13 +295,24 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 type cleanedMsg struct {
 	size int64
+	err  error
 }
 
+// cleanNext removes the target at m.cleanIndex from disk (or just reports its
+// size in dry-run mode) and returns the outcome as a cleanedMsg.
 func (m Model) cleanNext() tea.Cmd {
+	if m.cleanIndex >= len(m.pendingTargets) {
+		return func() tea.Msg { return cleanedMsg{} }
+	}
+
+	target := m.pendingTargets[m.cleanIndex]
+	dryRun := m.dryRun
+
 	return func() tea.Msg {
-		// Simulate cleaning (in real implementation, this would actually clean)
-		// For now, just return a message
-		return cleanedMsg{size: 1024}
+		if err := utils.SafeRemove(target.Path, dryRun); err != nil {
+			return cleanedMsg{err: err}
+		}
+		return cleanedMsg{size: target.SizeBytes}
 	}
 }
 
