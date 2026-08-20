@@ -38,7 +38,7 @@ func (d *DataMLCleaner) Name() string {
 }
 
 func (d *DataMLCleaner) Domain() config.Domain {
-	return config.DomainFrontend // TODO: Add DomainDataML to config
+	return config.DomainDataML
 }
 
 func (d *DataMLCleaner) Detect(ctx context.Context) (bool, error) {

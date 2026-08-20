@@ -38,7 +38,7 @@ func (b *BackendCleaner) Name() string {
 }
 
 func (b *BackendCleaner) Domain() config.Domain {
-	return config.DomainFrontend // TODO: Add DomainBackend to config
+	return config.DomainBackend
 }
 
 func (b *BackendCleaner) Detect(ctx context.Context) (bool, error) {

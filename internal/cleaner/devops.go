@@ -40,7 +40,7 @@ func (d *DevOpsCleaner) Name() string {
 }
 
 func (d *DevOpsCleaner) Domain() config.Domain {
-	return config.DomainFrontend // TODO: Add DomainDevOps to config
+	return config.DomainDevOps
 }
 
 func (d *DevOpsCleaner) Detect(ctx context.Context) (bool, error) {

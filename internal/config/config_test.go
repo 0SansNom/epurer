@@ -4,10 +4,6 @@ import (
 	"testing"
 )
 
-// =============================================================================
-// SafetyLevel Tests
-// =============================================================================
-
 func TestSafetyLevel_String(t *testing.T) {
 	tests := []struct {
 		level    SafetyLevel
@@ -48,10 +44,6 @@ func TestSafetyLevel_Icon(t *testing.T) {
 		})
 	}
 }
-
-// =============================================================================
-// CleanLevel Tests
-// =============================================================================
 
 func TestCleanLevel_String(t *testing.T) {
 	tests := []struct {
@@ -138,10 +130,6 @@ func TestCleanLevel_AllowsSafety(t *testing.T) {
 	}
 }
 
-// =============================================================================
-// Domain Tests
-// =============================================================================
-
 func TestDomain_String(t *testing.T) {
 	tests := []struct {
 		domain   Domain
@@ -149,6 +137,11 @@ func TestDomain_String(t *testing.T) {
 	}{
 		{DomainSystem, "System"},
 		{DomainFrontend, "Frontend"},
+		{DomainBackend, "Backend"},
+		{DomainMobile, "Mobile"},
+		{DomainDevOps, "DevOps"},
+		{DomainDataML, "Data/ML"},
+		{DomainAI, "AI"},
 		{Domain(99), "Unknown"},
 	}
 
@@ -160,10 +153,6 @@ func TestDomain_String(t *testing.T) {
 		})
 	}
 }
-
-// =============================================================================
-// Config Tests
-// =============================================================================
 
 func TestNewDefaultConfig(t *testing.T) {
 	cfg := NewDefaultConfig()
@@ -229,10 +218,6 @@ func TestConfig_Modification(t *testing.T) {
 		t.Error("Verbose modification failed")
 	}
 }
-
-// =============================================================================
-// Integration Tests
-// =============================================================================
 
 func TestConfigWithCleanLevel_Integration(t *testing.T) {
 	// Test that config levels work correctly with safety filtering

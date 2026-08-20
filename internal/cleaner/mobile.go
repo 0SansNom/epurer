@@ -38,7 +38,7 @@ func (m *MobileCleaner) Name() string {
 }
 
 func (m *MobileCleaner) Domain() config.Domain {
-	return config.DomainFrontend // TODO: Add DomainMobile to config
+	return config.DomainMobile
 }
 
 func (m *MobileCleaner) Detect(ctx context.Context) (bool, error) {
