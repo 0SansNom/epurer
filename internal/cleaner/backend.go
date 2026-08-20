@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/0SansNom/epurer/internal/config"
+	"github.com/0SansNom/epurer/internal/ignorelist"
 	"github.com/0SansNom/epurer/internal/scanner"
 	"github.com/0SansNom/epurer/pkg/utils"
 )
@@ -25,6 +26,11 @@ func NewBackendCleaner() (Cleaner, error) {
 	return &BackendCleaner{
 		scanner: s,
 	}, nil
+}
+
+// SetIgnoreList makes this cleaner respect a persistent ignore list.
+func (b *BackendCleaner) SetIgnoreList(l *ignorelist.List) {
+	b.scanner.SetIgnoreList(l)
 }
 
 func (b *BackendCleaner) Name() string {
@@ -53,7 +59,7 @@ func (b *BackendCleaner) Scan(ctx context.Context, cfg *config.Config) ([]CleanT
 		return nil, err
 	}
 
-	// === Python ===
+
 
 	// __pycache__ (Safe - automatically rebuilt)
 	pycacheTargets := b.scanPattern(ctx, "__pycache__")
@@ -103,7 +109,7 @@ func (b *BackendCleaner) Scan(ctx context.Context, cfg *config.Config) ([]CleanT
 		}
 	}
 
-	// === Java / Maven / Gradle ===
+
 
 	// Maven local repository (Moderate - can be large)
 	if cfg.CleanLevel.AllowsSafety(config.Moderate) {
@@ -139,7 +145,7 @@ func (b *BackendCleaner) Scan(ctx context.Context, cfg *config.Config) ([]CleanT
 	targetTargets := b.scanPattern(ctx, "target")
 	targets = append(targets, targetTargets...)
 
-	// === Go ===
+
 
 	// Go build cache (Safe)
 	goCachePath := filepath.Join(home, "Library", "Caches", "go-build")
@@ -171,7 +177,7 @@ func (b *BackendCleaner) Scan(ctx context.Context, cfg *config.Config) ([]CleanT
 		}
 	}
 
-	// === Rust ===
+
 
 	// Cargo cache (Safe)
 	cargoCachePath := filepath.Join(home, ".cargo", "registry")
@@ -193,7 +199,7 @@ func (b *BackendCleaner) Scan(ctx context.Context, cfg *config.Config) ([]CleanT
 		targets = append(targets, rustTargetTargets...)
 	}
 
-	// === PHP ===
+
 
 	// Composer cache (Safe)
 	composerCachePath := filepath.Join(home, ".composer", "cache")
@@ -215,7 +221,7 @@ func (b *BackendCleaner) Scan(ctx context.Context, cfg *config.Config) ([]CleanT
 		targets = append(targets, vendorTargets...)
 	}
 
-	// === Ruby ===
+
 
 	// Gem cache (Safe)
 	gemCachePath := filepath.Join(home, ".gem")

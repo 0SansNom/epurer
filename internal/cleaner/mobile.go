@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/0SansNom/epurer/internal/config"
+	"github.com/0SansNom/epurer/internal/ignorelist"
 	"github.com/0SansNom/epurer/internal/scanner"
 	"github.com/0SansNom/epurer/pkg/utils"
 )
@@ -25,6 +26,11 @@ func NewMobileCleaner() (Cleaner, error) {
 	return &MobileCleaner{
 		scanner: s,
 	}, nil
+}
+
+// SetIgnoreList makes this cleaner respect a persistent ignore list.
+func (m *MobileCleaner) SetIgnoreList(l *ignorelist.List) {
+	m.scanner.SetIgnoreList(l)
 }
 
 func (m *MobileCleaner) Name() string {
@@ -51,7 +57,7 @@ func (m *MobileCleaner) Scan(ctx context.Context, cfg *config.Config) ([]CleanTa
 		return nil, err
 	}
 
-	// === iOS / Xcode (VeryHigh impact - can be 50-100 GB) ===
+
 
 	// DerivedData (Safe - always rebuilt)
 	derivedDataPath := filepath.Join(home, "Library", "Developer", "Xcode", "DerivedData")
@@ -183,7 +189,7 @@ func (m *MobileCleaner) Scan(ctx context.Context, cfg *config.Config) ([]CleanTa
 		}
 	}
 
-	// === Android ===
+
 
 	// Android build folders (Safe - rebuilt)
 	androidBuildTargets := m.scanAndroidBuildFolders(ctx)
@@ -236,7 +242,7 @@ func (m *MobileCleaner) Scan(ctx context.Context, cfg *config.Config) ([]CleanTa
 		}
 	}
 
-	// === CocoaPods ===
+
 
 	// CocoaPods cache (Safe)
 	podsCachePath := filepath.Join(home, "Library", "Caches", "CocoaPods")
@@ -252,7 +258,7 @@ func (m *MobileCleaner) Scan(ctx context.Context, cfg *config.Config) ([]CleanTa
 		}
 	}
 
-	// === Flutter ===
+
 
 	// .dart_tool (Safe - rebuilt)
 	dartToolTargets := m.scanDartTool(ctx)

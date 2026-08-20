@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/0SansNom/epurer/internal/config"
+	"github.com/0SansNom/epurer/internal/ignorelist"
 	"github.com/0SansNom/epurer/internal/scanner"
 	"github.com/0SansNom/epurer/pkg/utils"
 )
@@ -27,6 +28,11 @@ func NewDevOpsCleaner() (Cleaner, error) {
 	return &DevOpsCleaner{
 		scanner: s,
 	}, nil
+}
+
+// SetIgnoreList makes this cleaner respect a persistent ignore list.
+func (d *DevOpsCleaner) SetIgnoreList(l *ignorelist.List) {
+	d.scanner.SetIgnoreList(l)
 }
 
 func (d *DevOpsCleaner) Name() string {
@@ -51,7 +57,7 @@ func (d *DevOpsCleaner) Scan(ctx context.Context, cfg *config.Config) ([]CleanTa
 		return nil, err
 	}
 
-	// === Docker ===
+
 
 	if utils.CommandExists("docker") {
 		// Dangling images (Moderate)
@@ -105,7 +111,7 @@ func (d *DevOpsCleaner) Scan(ctx context.Context, cfg *config.Config) ([]CleanTa
 		}
 	}
 
-	// === Kubernetes ===
+
 
 	// kubectl cache (Safe)
 	kubeCachePath := filepath.Join(home, ".kube", "cache")
@@ -137,7 +143,7 @@ func (d *DevOpsCleaner) Scan(ctx context.Context, cfg *config.Config) ([]CleanTa
 		}
 	}
 
-	// === Terraform ===
+
 
 	// .terraform folders (Moderate - providers and modules)
 	if cfg.CleanLevel.AllowsSafety(config.Moderate) {
@@ -145,7 +151,7 @@ func (d *DevOpsCleaner) Scan(ctx context.Context, cfg *config.Config) ([]CleanTa
 		targets = append(targets, terraformTargets...)
 	}
 
-	// === Cloud CLIs ===
+
 
 	// AWS CLI cache (Safe)
 	awsCachePath := filepath.Join(home, ".aws", "cli", "cache")
@@ -175,7 +181,7 @@ func (d *DevOpsCleaner) Scan(ctx context.Context, cfg *config.Config) ([]CleanTa
 		}
 	}
 
-	// === Vagrant ===
+
 
 	// Vagrant boxes (Moderate - can be large VMs)
 	if cfg.CleanLevel.AllowsSafety(config.Moderate) {

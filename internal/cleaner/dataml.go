@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/0SansNom/epurer/internal/config"
+	"github.com/0SansNom/epurer/internal/ignorelist"
 	"github.com/0SansNom/epurer/internal/scanner"
 	"github.com/0SansNom/epurer/pkg/utils"
 )
@@ -25,6 +26,11 @@ func NewDataMLCleaner() (Cleaner, error) {
 	return &DataMLCleaner{
 		scanner: s,
 	}, nil
+}
+
+// SetIgnoreList makes this cleaner respect a persistent ignore list.
+func (d *DataMLCleaner) SetIgnoreList(l *ignorelist.List) {
+	d.scanner.SetIgnoreList(l)
 }
 
 func (d *DataMLCleaner) Name() string {
@@ -48,7 +54,7 @@ func (d *DataMLCleaner) Scan(ctx context.Context, cfg *config.Config) ([]CleanTa
 		return nil, err
 	}
 
-	// === Conda ===
+
 
 	// Conda package cache (Safe - can be re-downloaded)
 	condaPkgsPath := filepath.Join(home, ".conda", "pkgs")
@@ -92,7 +98,7 @@ func (d *DataMLCleaner) Scan(ctx context.Context, cfg *config.Config) ([]CleanTa
 		}
 	}
 
-	// === Jupyter ===
+
 
 	// Jupyter runtime files (Safe)
 	jupyterRuntimePath := filepath.Join(home, "Library", "Jupyter", "runtime")
@@ -127,7 +133,7 @@ func (d *DataMLCleaner) Scan(ctx context.Context, cfg *config.Config) ([]CleanTa
 	checkpointTargets := d.scanPattern(ctx, ".ipynb_checkpoints")
 	targets = append(targets, checkpointTargets...)
 
-	// === TensorFlow ===
+
 
 	// TensorFlow cache
 	tfCachePath := filepath.Join(home, ".keras")
@@ -159,7 +165,7 @@ func (d *DataMLCleaner) Scan(ctx context.Context, cfg *config.Config) ([]CleanTa
 		}
 	}
 
-	// === PyTorch ===
+
 
 	// PyTorch hub cache
 	torchHubPath := filepath.Join(home, ".cache", "torch", "hub")
@@ -175,7 +181,7 @@ func (d *DataMLCleaner) Scan(ctx context.Context, cfg *config.Config) ([]CleanTa
 		}
 	}
 
-	// === Hugging Face ===
+
 
 	// Hugging Face transformers cache
 	hfCachePath := filepath.Join(home, ".cache", "huggingface")
@@ -191,7 +197,7 @@ func (d *DataMLCleaner) Scan(ctx context.Context, cfg *config.Config) ([]CleanTa
 		}
 	}
 
-	// === Weights & Biases ===
+
 
 	// W&B cache
 	wandbCachePath := filepath.Join(home, ".cache", "wandb")
@@ -220,7 +226,7 @@ func (d *DataMLCleaner) Scan(ctx context.Context, cfg *config.Config) ([]CleanTa
 		}
 	}
 
-	// === MLflow ===
+
 
 	// MLflow artifacts (Moderate - experiment data)
 	if cfg.CleanLevel.AllowsSafety(config.Moderate) {
@@ -228,7 +234,7 @@ func (d *DataMLCleaner) Scan(ctx context.Context, cfg *config.Config) ([]CleanTa
 		targets = append(targets, mlflowTargets...)
 	}
 
-	// === General Data Science ===
+
 
 	// .DS_Store files (Safe)
 	dsStoreTargets := d.scanPattern(ctx, ".DS_Store")
