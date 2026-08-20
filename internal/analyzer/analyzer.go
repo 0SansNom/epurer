@@ -3,6 +3,7 @@
 package analyzer
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"sort"
@@ -17,6 +18,11 @@ type Entry struct {
 	Path  string
 	Size  int64
 	IsDir bool
+	// Incomplete is true when Size is a lower bound, not the true total -
+	// some part of this directory couldn't be read (most commonly macOS
+	// blocking access to a TCC-protected folder, e.g. Photos Library,
+	// without Full Disk Access granted to the terminal).
+	Incomplete bool
 }
 
 // ListDir returns path's immediate children sorted by size, descending.
@@ -45,13 +51,16 @@ func ListDir(path string) ([]Entry, error) {
 			isDir := de.IsDir()
 
 			var size int64
+			var incomplete bool
 			if isDir {
-				size, _ = utils.GetDirSize(full)
+				var sizeErr error
+				size, sizeErr = utils.GetDirSize(full)
+				incomplete = errors.Is(sizeErr, utils.ErrIncompleteSize)
 			} else if info, err := de.Info(); err == nil {
 				size = info.Size()
 			}
 
-			entries[i] = Entry{Name: de.Name(), Path: full, Size: size, IsDir: isDir}
+			entries[i] = Entry{Name: de.Name(), Path: full, Size: size, IsDir: isDir, Incomplete: incomplete}
 		}(i, de)
 	}
 

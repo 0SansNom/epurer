@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
@@ -101,6 +102,43 @@ func TestGetDirSize(t *testing.T) {
 	expectedSize := int64(18)
 	if size != expectedSize {
 		t.Errorf("GetDirSize(%q) = %d, want %d", tmpDir, size, expectedSize)
+	}
+}
+
+// TestGetDirSize_UnreadableSubdir is a regression test: GetDirSize used to
+// silently swallow every permission error and always return a nil error,
+// so a directory blocked by macOS's TCC protections (Photos Library, etc.
+// without Full Disk Access) looked deceptively tiny with nothing telling
+// the caller the number was incomplete.
+func TestGetDirSize_UnreadableSubdir(t *testing.T) {
+	if os.Geteuid() == 0 {
+		t.Skip("running as root - permission bits don't block access")
+	}
+
+	tmpDir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(tmpDir, "visible.txt"), []byte("12345"), 0644); err != nil {
+		t.Fatalf("WriteFile() error = %v", err)
+	}
+
+	locked := filepath.Join(tmpDir, "locked")
+	if err := os.Mkdir(locked, 0755); err != nil {
+		t.Fatalf("Mkdir() error = %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(locked, "secret.txt"), []byte("should not be counted"), 0644); err != nil {
+		t.Fatalf("WriteFile() error = %v", err)
+	}
+	if err := os.Chmod(locked, 0); err != nil {
+		t.Fatalf("Chmod(0) error = %v", err)
+	}
+	defer os.Chmod(locked, 0755) // let TempDir cleanup remove it
+
+	size, err := GetDirSize(tmpDir)
+
+	if !errors.Is(err, ErrIncompleteSize) {
+		t.Errorf("err = %v, want it to wrap ErrIncompleteSize", err)
+	}
+	if size != 5 {
+		t.Errorf("size = %d, want 5 (only the readable file) - the locked subdir's content must not silently count as 0", size)
 	}
 }
 

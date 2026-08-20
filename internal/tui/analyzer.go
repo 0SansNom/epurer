@@ -275,8 +275,18 @@ func (m AnalyzerModel) View() string {
 			}
 			bar := strings.Repeat("█", filled) + strings.Repeat("░", barWidth-filled)
 
+			sizeStr := utils.FormatBytes(e.Size)
+			if e.Incomplete {
+				// Size is a lower bound only - part of this directory
+				// couldn't be read (commonly: no Full Disk Access on macOS).
+				sizeStr = "≥" + sizeStr
+			}
+
 			line := fmt.Sprintf("%s%s %-30s %10s  %s",
-				cursor, icon, truncateName(e.Name, 30), utils.FormatBytes(e.Size), bar)
+				cursor, icon, truncateName(e.Name, 30), sizeStr, bar)
+			if e.Incomplete && i != m.cursor {
+				style = style.Foreground(warningColor)
+			}
 			b.WriteString(style.Render(line))
 			b.WriteString("\n")
 		}
@@ -294,11 +304,25 @@ func (m AnalyzerModel) View() string {
 		b.WriteString("\n")
 	}
 
+	if hasIncompleteEntry(m.entries) {
+		b.WriteString("\n")
+		b.WriteString(mutedStyle.Render("≥ size is a lower bound - part of that folder is protected (no Full Disk Access)"))
+	}
+
 	b.WriteString("\n")
 	help := "↑/↓: navigate • enter: open • backspace: up • r: reveal in Finder • d: delete • q: quit"
 	b.WriteString(helpStyle.Render(help))
 
 	return b.String()
+}
+
+func hasIncompleteEntry(entries []analyzer.Entry) bool {
+	for _, e := range entries {
+		if e.Incomplete {
+			return true
+		}
+	}
+	return false
 }
 
 func truncateName(s string, max int) string {

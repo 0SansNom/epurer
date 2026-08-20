@@ -1,12 +1,51 @@
 package utils
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 )
+
+// ErrIncompleteSize is wrapped into GetDirSize's returned error when one or
+// more entries under path couldn't be read (most commonly: macOS blocking
+// access to a TCC-protected folder like Photos Library without Full Disk
+// Access). The returned size is a lower bound, not the true total - callers
+// that surface sizes to a user should check for this rather than silently
+// trusting a possibly-tiny number for what's actually a large, protected
+// directory.
+var ErrIncompleteSize = errors.New("directory size is incomplete: some entries could not be read")
+
+// GetDirSize calculates the total size of a directory recursively. If any
+// entry under path couldn't be read, the returned size is only a partial
+// sum and the error wraps ErrIncompleteSize (check with errors.Is).
+func GetDirSize(path string) (int64, error) {
+	var size int64
+	var incomplete bool
+
+	walkErr := filepath.Walk(path, func(_ string, info os.FileInfo, err error) error {
+		if err != nil {
+			// Skip what we can't read, but remember that we did.
+			incomplete = true
+			return nil
+		}
+		if !info.IsDir() {
+			size += info.Size()
+		}
+		return nil
+	})
+
+	if walkErr != nil {
+		return size, walkErr
+	}
+	if incomplete {
+		return size, ErrIncompleteSize
+	}
+
+	return size, nil
+}
 
 // protectedPaths are locations SafeRemove refuses to touch, regardless of
 // what a caller asks for. This is a last line of defense against a bug
@@ -73,24 +112,6 @@ func ExpandHome(path string) (string, error) {
 	}
 
 	return path, nil
-}
-
-// GetDirSize calculates the total size of a directory recursively
-func GetDirSize(path string) (int64, error) {
-	var size int64
-
-	err := filepath.Walk(path, func(_ string, info os.FileInfo, err error) error {
-		if err != nil {
-			// Continue on permission errors
-			return nil
-		}
-		if !info.IsDir() {
-			size += info.Size()
-		}
-		return nil
-	})
-
-	return size, err
 }
 
 // SafeRemove removes a path, respecting the dryRun flag. It refuses to

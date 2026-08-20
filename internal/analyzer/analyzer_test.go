@@ -6,6 +6,41 @@ import (
 	"testing"
 )
 
+// TestListDir_MarksIncompleteSizeOnUnreadableChild verifies that a child
+// directory epurer can't fully read (e.g. blocked by macOS's TCC
+// protections without Full Disk Access) is flagged Incomplete instead of
+// silently reporting a misleadingly small size.
+func TestListDir_MarksIncompleteSizeOnUnreadableChild(t *testing.T) {
+	if os.Geteuid() == 0 {
+		t.Skip("running as root - permission bits don't block access")
+	}
+
+	dir := t.TempDir()
+	locked := filepath.Join(dir, "locked")
+	if err := os.Mkdir(locked, 0755); err != nil {
+		t.Fatalf("Mkdir() error = %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(locked, "secret.txt"), []byte("hidden content"), 0644); err != nil {
+		t.Fatalf("WriteFile() error = %v", err)
+	}
+	if err := os.Chmod(locked, 0); err != nil {
+		t.Fatalf("Chmod(0) error = %v", err)
+	}
+	defer os.Chmod(locked, 0755)
+
+	entries, err := ListDir(dir)
+	if err != nil {
+		t.Fatalf("ListDir() error = %v", err)
+	}
+
+	if len(entries) != 1 {
+		t.Fatalf("got %d entries, want 1", len(entries))
+	}
+	if !entries[0].Incomplete {
+		t.Error("Incomplete = false, want true for a directory with an unreadable child")
+	}
+}
+
 func TestListDir_SortsBySizeDescending(t *testing.T) {
 	dir := t.TempDir()
 
