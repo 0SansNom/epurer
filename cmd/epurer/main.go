@@ -11,6 +11,7 @@ import (
 	"github.com/0SansNom/epurer/internal/cleaner"
 	"github.com/0SansNom/epurer/internal/config"
 	"github.com/0SansNom/epurer/internal/detector"
+	"github.com/0SansNom/epurer/internal/ignorelist"
 	"github.com/0SansNom/epurer/internal/reporter"
 	"github.com/0SansNom/epurer/internal/tui"
 )
@@ -48,6 +49,9 @@ Xcode, Android, Flutter, TensorFlow, PyTorch, and more.`,
 		newReportCmd(),
 		newSmartCmd(),
 		newTUICmd(),
+		newIgnoreCmd(),
+		newPurgeCmd(),
+		newAnalyzeCmd(),
 	)
 
 	if err := rootCmd.Execute(); err != nil {
@@ -74,6 +78,7 @@ Domains:
   mobile   - Xcode, Android, Flutter
   devops   - Docker, Kubernetes, Terraform
   dataml   - Conda, Jupyter, TensorFlow, PyTorch
+  ai       - Claude, Cursor, GitHub Copilot, Continue.dev, ChatGPT desktop
   system   - System caches, logs, Homebrew`,
 		RunE: runClean,
 	}
@@ -428,6 +433,12 @@ func runSmart(cmd *cobra.Command, args []string) error {
 		cleaner.NewTempFilesCleaner(),
 	)
 
+	if c, err := cleaner.NewAICleaner(); err == nil {
+		cleaners = append(cleaners, c)
+	}
+
+	applyIgnoreList(cleaners)
+
 	// Scan and clean
 	targetsByDomain := make(map[string][]cleaner.CleanTarget)
 
@@ -523,7 +534,7 @@ func runTUI(cmd *cobra.Command, args []string) error {
 	}
 
 	// Clear loading line and show cursor
-	fmt.Print("\r\033[K") // Clear line
+	fmt.Print("\r\033[K")  // Clear line
 	fmt.Print("\033[?25h") // Show cursor
 
 	if len(targetsByDomain) == 0 {
@@ -566,8 +577,29 @@ func initAllCleaners() ([]cleaner.Cleaner, error) {
 	if c, err := cleaner.NewDataMLCleaner(); err == nil {
 		cleaners = append(cleaners, c)
 	}
+	if c, err := cleaner.NewAICleaner(); err == nil {
+		cleaners = append(cleaners, c)
+	}
+
+	applyIgnoreList(cleaners)
 
 	return cleaners, nil
+}
+
+// applyIgnoreList loads the persistent ignore list and applies it to every
+// cleaner that scans the filesystem. Failure to load is non-fatal - cleaners
+// simply run without ignore filtering.
+func applyIgnoreList(cleaners []cleaner.Cleaner) {
+	ignList, err := ignorelist.Load()
+	if err != nil {
+		return
+	}
+
+	for _, c := range cleaners {
+		if ia, ok := c.(cleaner.IgnoreAware); ok {
+			ia.SetIgnoreList(ignList)
+		}
+	}
 }
 
 func filterCleanersByDomain(cleaners []cleaner.Cleaner, domains []string) []cleaner.Cleaner {
@@ -614,13 +646,14 @@ func toLower(s string) string {
 func matchesDomain(cleanerName, requestedDomain string) bool {
 	// Map cleaner names to domain keywords
 	domainMapping := map[string][]string{
-		"frontend":    {"frontend"},
-		"backend":     {"backend"},
-		"mobile":      {"mobile"},
-		"devops":      {"devops"},
-		"dataml":      {"data/ml", "dataml"},
-		"data/ml":     {"data/ml", "dataml"},
-		"system":      {"trash", "cache", "log", "temp", "dns", "homebrew", "xcode", "launchpad", "ios"},
+		"frontend": {"frontend"},
+		"backend":  {"backend"},
+		"mobile":   {"mobile"},
+		"devops":   {"devops"},
+		"dataml":   {"data/ml", "dataml"},
+		"data/ml":  {"data/ml", "dataml"},
+		"ai":       {"ai"},
+		"system":   {"trash", "cache", "log", "temp", "dns", "homebrew", "xcode", "launchpad", "ios"},
 	}
 
 	// Check direct match
