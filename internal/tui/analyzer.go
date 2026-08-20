@@ -218,7 +218,7 @@ func (m AnalyzerModel) View() string {
 
 	header := lipgloss.JoinVertical(
 		lipgloss.Center,
-		titleStyle.Render("🧹 Épurer — Analyze"),
+		titleStyle.Render(appTitle("Analyze")),
 		subtitleStyle.Render(m.path),
 	)
 	b.WriteString(headerBox.Render(header))

@@ -1,10 +1,13 @@
 .PHONY: build install test clean run-detect run-report help
 
+VERSION := $(shell git describe --tags --always --dirty 2>/dev/null | sed 's/^v//')
+LDFLAGS := -X github.com/0SansNom/epurer/internal/version.Version=$(VERSION)
+
 # Build binary
 build:
-	@echo "🔨 Building epurer..."
+	@echo "🔨 Building epurer $(VERSION)..."
 	@mkdir -p bin
-	@go build -o bin/epurer ./cmd/epurer
+	@go build -ldflags "$(LDFLAGS)" -o bin/epurer ./cmd/epurer
 	@echo "✅ Build complete: bin/epurer"
 
 # Install to /usr/local/bin

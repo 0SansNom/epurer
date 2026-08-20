@@ -10,6 +10,7 @@ import (
 
 	"github.com/0SansNom/epurer/internal/cleaner"
 	"github.com/0SansNom/epurer/internal/config"
+	"github.com/0SansNom/epurer/internal/version"
 )
 
 // captureOutput captures stdout during function execution
@@ -118,7 +119,7 @@ func TestPrintHeader(t *testing.T) {
 	if !strings.Contains(output, "Épurer") {
 		t.Error("Header should contain 'Épurer'")
 	}
-	if !strings.Contains(output, "v1.1") {
+	if !strings.Contains(output, "v"+version.Version) {
 		t.Error("Header should contain version")
 	}
 }

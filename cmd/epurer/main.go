@@ -14,6 +14,7 @@ import (
 	"github.com/0SansNom/epurer/internal/ignorelist"
 	"github.com/0SansNom/epurer/internal/reporter"
 	"github.com/0SansNom/epurer/internal/tui"
+	"github.com/0SansNom/epurer/internal/version"
 )
 
 var (
@@ -36,7 +37,7 @@ build artifacts, and temporary files on macOS.
 
 Supports: Node.js, Python, Java, Go, Rust, PHP, Ruby, Docker, Kubernetes,
 Xcode, Android, Flutter, TensorFlow, PyTorch, and more.`,
-		Version: "1.2.0",
+		Version: version.Version,
 	}
 
 	// Global flags

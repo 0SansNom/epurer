@@ -246,7 +246,7 @@ func (m PurgeModel) View() string {
 
 	header := lipgloss.JoinVertical(
 		lipgloss.Center,
-		titleStyle.Render("🧹 Épurer — Purge"),
+		titleStyle.Render(appTitle("Purge")),
 		subtitleStyle.Render("Project artifact cleanup"),
 	)
 	b.WriteString(headerBox.Render(header))

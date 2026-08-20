@@ -17,9 +17,7 @@ builds:
       - arm64
     ldflags:
       - -s -w
-      - -X main.version={{.Version}}
-      - -X main.commit={{.Commit}}
-      - -X main.date={{.Date}}
+      - -X github.com/0SansNom/epurer/internal/version.Version={{.Version}}
 
 archives:
   - format: tar.gz

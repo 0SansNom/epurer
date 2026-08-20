@@ -12,8 +12,20 @@ import (
 	"github.com/charmbracelet/lipgloss"
 
 	"github.com/0SansNom/epurer/internal/cleaner"
+	"github.com/0SansNom/epurer/internal/version"
 	"github.com/0SansNom/epurer/pkg/utils"
 )
+
+// appTitle builds the "🧹 Épurer vX.Y.Z [suffix]" title shown in every
+// screen's header, so all three TUIs (ui/purge/analyze) stay consistent
+// and never hard-code a version number that can go stale.
+func appTitle(suffix string) string {
+	title := "🧹 Épurer v" + version.Version
+	if suffix != "" {
+		title += " — " + suffix
+	}
+	return title
+}
 
 // Colors
 var (
@@ -327,7 +339,7 @@ func (m Model) View() string {
 	// Header
 	header := lipgloss.JoinVertical(
 		lipgloss.Center,
-		titleStyle.Render("🧹 Épurer"),
+		titleStyle.Render(appTitle("")),
 		subtitleStyle.Render("Interactive cleanup mode"),
 	)
 	b.WriteString(headerBox.Render(header))

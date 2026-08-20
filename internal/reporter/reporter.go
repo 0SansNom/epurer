@@ -11,6 +11,7 @@ import (
 	"github.com/0SansNom/epurer/internal/cleaner"
 	"github.com/0SansNom/epurer/internal/config"
 	"github.com/0SansNom/epurer/internal/purge"
+	"github.com/0SansNom/epurer/internal/version"
 	"github.com/0SansNom/epurer/pkg/utils"
 )
 
@@ -90,7 +91,7 @@ func NewReporter(verbose bool) *Reporter {
 
 // PrintHeader prints the application header
 func (r *Reporter) PrintHeader() {
-	title := "🧹 Épurer v1.1"
+	title := "🧹 Épurer v" + version.Version
 	subtitle := "Intelligent cache cleanup for macOS"
 
 	content := lipgloss.JoinVertical(
