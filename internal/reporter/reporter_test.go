@@ -28,9 +28,9 @@ func captureOutput(f func()) string {
 	return buf.String()
 }
 
-// =============================================================================
+
 // NewReporter Tests
-// =============================================================================
+
 
 func TestNewReporter(t *testing.T) {
 	r := NewReporter(false)
@@ -52,9 +52,9 @@ func TestNewReporter_Verbose(t *testing.T) {
 	}
 }
 
-// =============================================================================
+
 // Helper Function Tests
-// =============================================================================
+
 
 func TestGetImpactString(t *testing.T) {
 	tests := []struct {
@@ -103,9 +103,9 @@ func TestGetActionVerb(t *testing.T) {
 	}
 }
 
-// =============================================================================
+
 // PrintHeader Tests
-// =============================================================================
+
 
 func TestPrintHeader(t *testing.T) {
 	r := NewReporter(false)
@@ -123,9 +123,9 @@ func TestPrintHeader(t *testing.T) {
 	}
 }
 
-// =============================================================================
+
 // PrintDetection Tests
-// =============================================================================
+
 
 func TestPrintDetection(t *testing.T) {
 	r := NewReporter(false)
@@ -186,9 +186,9 @@ func TestPrintDetection_Empty(t *testing.T) {
 	}
 }
 
-// =============================================================================
+
 // PrintEstimation Tests
-// =============================================================================
+
 
 func TestPrintEstimation(t *testing.T) {
 	r := NewReporter(false)
@@ -253,9 +253,9 @@ func TestPrintEstimation_AllSafetyLevels(t *testing.T) {
 	}
 }
 
-// =============================================================================
+
 // PrintTargetDetails Tests
-// =============================================================================
+
 
 func TestPrintTargetDetails_NotVerbose(t *testing.T) {
 	r := NewReporter(false)
@@ -306,9 +306,9 @@ func TestPrintTargetDetails_Empty(t *testing.T) {
 	_ = output
 }
 
-// =============================================================================
+
 // PrintProgress Tests
-// =============================================================================
+
 
 func TestPrintProgress(t *testing.T) {
 	r := NewReporter(false)
@@ -339,9 +339,9 @@ func TestPrintProgress_Complete(t *testing.T) {
 	}
 }
 
-// =============================================================================
+
 // PrintCleanResults Tests
-// =============================================================================
+
 
 func TestPrintCleanResults_DryRun(t *testing.T) {
 	r := NewReporter(false)
@@ -437,9 +437,9 @@ func TestPrintCleanResults_Empty(t *testing.T) {
 	}
 }
 
-// =============================================================================
+
 // Print Message Tests
-// =============================================================================
+
 
 func TestPrintWarning(t *testing.T) {
 	r := NewReporter(false)
@@ -489,9 +489,9 @@ func TestPrintInfo(t *testing.T) {
 	}
 }
 
-// =============================================================================
+
 // PrintSafetyLegend Tests
-// =============================================================================
+
 
 func TestPrintSafetyLegend(t *testing.T) {
 	r := NewReporter(false)
@@ -515,9 +515,9 @@ func TestPrintSafetyLegend(t *testing.T) {
 	}
 }
 
-// =============================================================================
+
 // Style Tests (verify styles are initialized)
-// =============================================================================
+
 
 func TestStyles_Initialized(t *testing.T) {
 	// Verify that all style variables are initialized
@@ -546,9 +546,9 @@ func TestStyles_Initialized(t *testing.T) {
 	}
 }
 
-// =============================================================================
+
 // Integration Tests
-// =============================================================================
+
 
 func TestReporter_FullWorkflow(t *testing.T) {
 	r := NewReporter(true)
@@ -589,9 +589,9 @@ func TestReporter_FullWorkflow(t *testing.T) {
 	}
 }
 
-// =============================================================================
+
 // Edge Cases
-// =============================================================================
+
 
 func TestReporter_LargeNumbers(t *testing.T) {
 	r := NewReporter(false)

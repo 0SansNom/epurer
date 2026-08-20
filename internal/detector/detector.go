@@ -43,7 +43,7 @@ func (d *StackDetector) DetectAll() DetectionResult {
 		DataML:   []string{},
 	}
 
-	// === Frontend Detection ===
+
 
 	if utils.CommandExists("node") {
 		result.Frontend = append(result.Frontend, "node")
@@ -64,7 +64,7 @@ func (d *StackDetector) DetectAll() DetectionResult {
 		result.Frontend = append(result.Frontend, "deno")
 	}
 
-	// === Backend Detection ===
+
 
 	if utils.CommandExists("python3") || utils.CommandExists("python") {
 		result.Backend = append(result.Backend, "python")
@@ -94,7 +94,7 @@ func (d *StackDetector) DetectAll() DetectionResult {
 		result.Backend = append(result.Backend, "gradle")
 	}
 
-	// === Mobile Detection ===
+
 
 	if utils.PathExists("/Applications/Xcode.app") {
 		result.Mobile = append(result.Mobile, "xcode")
@@ -115,7 +115,7 @@ func (d *StackDetector) DetectAll() DetectionResult {
 		result.Mobile = append(result.Mobile, "cocoapods")
 	}
 
-	// === DevOps Detection ===
+
 
 	if utils.CommandExists("docker") {
 		result.DevOps = append(result.DevOps, "docker")
@@ -145,7 +145,7 @@ func (d *StackDetector) DetectAll() DetectionResult {
 		result.DevOps = append(result.DevOps, "azure-cli")
 	}
 
-	// === Data Science / ML Detection ===
+
 
 	if utils.CommandExists("conda") {
 		result.DataML = append(result.DataML, "conda")
