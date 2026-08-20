@@ -1,11 +1,51 @@
 package utils
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 )
+
+// protectedPaths are locations SafeRemove refuses to touch, regardless of
+// what a caller asks for. This is a last line of defense against a bug
+// upstream (a bad filepath.Dir/Join, an over-broad glob) turning into
+// deleting a system directory or the user's entire home folder.
+var protectedPaths = map[string]bool{
+	"/":             true,
+	"/System":       true,
+	"/Library":      true,
+	"/Applications": true,
+	"/Users":        true,
+	"/bin":          true,
+	"/sbin":         true,
+	"/usr":          true,
+	"/etc":          true,
+	"/var":          true,
+	"/private":      true,
+	"/opt":          true,
+	"/Volumes":      true,
+}
+
+// isProtectedPath reports whether path is empty, a known system root, or
+// the user's home directory itself.
+func isProtectedPath(path string) bool {
+	if path == "" {
+		return true
+	}
+
+	clean := filepath.Clean(path)
+	if protectedPaths[clean] {
+		return true
+	}
+
+	if home, err := os.UserHomeDir(); err == nil && clean == filepath.Clean(home) {
+		return true
+	}
+
+	return false
+}
 
 // PathExists checks if a path exists on the filesystem
 func PathExists(path string) bool {
@@ -53,8 +93,14 @@ func GetDirSize(path string) (int64, error) {
 	return size, err
 }
 
-// SafeRemove removes a path, respecting the dryRun flag
+// SafeRemove removes a path, respecting the dryRun flag. It refuses to
+// touch a protected path (see isProtectedPath) even in non-dry-run mode,
+// as a backstop against upstream bugs producing a dangerous target.
 func SafeRemove(path string, dryRun bool) error {
+	if isProtectedPath(path) {
+		return fmt.Errorf("refusing to remove protected path: %q", path)
+	}
+
 	if dryRun {
 		return nil
 	}

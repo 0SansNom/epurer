@@ -6,6 +6,9 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+
+	"github.com/0SansNom/epurer/internal/ignorelist"
+	"github.com/0SansNom/epurer/pkg/utils"
 )
 
 // Scanner scans the filesystem concurrently for patterns
@@ -13,6 +16,13 @@ type Scanner struct {
 	workers    int
 	homePath   string
 	searchDirs []string // Directories to search in (e.g., ~/Projects, ~/Code)
+	ignoreList *ignorelist.List
+}
+
+// SetIgnoreList sets the ignore list this scanner should respect. Paths
+// covered by the list are skipped and not descended into.
+func (s *Scanner) SetIgnoreList(l *ignorelist.List) {
+	s.ignoreList = l
 }
 
 // ScanResult contains a found path and its size
@@ -35,6 +45,9 @@ func NewScanner() (*Scanner, error) {
 		filepath.Join(home, "Code"),
 		filepath.Join(home, "Development"),
 		filepath.Join(home, "Developer"),
+		filepath.Join(home, "GitHub"),
+		filepath.Join(home, "Workspace"),
+		filepath.Join(home, "dev"),
 		filepath.Join(home, "Documents"),
 		filepath.Join(home, "Desktop"),
 	}
@@ -161,6 +174,14 @@ func (s *Scanner) walkAndMatch(ctx context.Context, searchDir, pattern string, r
 			return nil
 		}
 
+		// Skip paths covered by the ignore list entirely
+		if s.ignoreList != nil && s.ignoreList.IsIgnored(path) {
+			if d.IsDir() {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+
 		// Check if the base name matches the pattern
 		baseName := filepath.Base(path)
 		matched, err := filepath.Match(pattern, baseName)
@@ -199,38 +220,7 @@ func (s *Scanner) walkAndMatch(ctx context.Context, searchDir, pattern string, r
 
 // calculateDirSize calculates the total size of a directory recursively
 func (s *Scanner) calculateDirSize(path string) (int64, error) {
-	var size int64
-	var mu sync.Mutex
-
-	// Use a semaphore to limit concurrent goroutines
-	semaphore := make(chan struct{}, 10)
-	var wg sync.WaitGroup
-
-	err := filepath.Walk(path, func(filePath string, info os.FileInfo, err error) error {
-		if err != nil {
-			// Continue despite errors (permission issues, etc.)
-			return nil
-		}
-
-		if !info.IsDir() {
-			wg.Add(1)
-			semaphore <- struct{}{}
-
-			go func(fileSize int64) {
-				defer wg.Done()
-				defer func() { <-semaphore }()
-
-				mu.Lock()
-				size += fileSize
-				mu.Unlock()
-			}(info.Size())
-		}
-
-		return nil
-	})
-
-	wg.Wait()
-	return size, err
+	return utils.GetDirSize(path)
 }
 
 // FindMultiplePatterns searches for multiple patterns concurrently

@@ -49,10 +49,6 @@ func createTestDir(t *testing.T, parent, name string, files map[string]string) s
 	return dir
 }
 
-// =============================================================================
-// FrontendCleaner Tests
-// =============================================================================
-
 func TestNewFrontendCleaner(t *testing.T) {
 	cleaner, err := NewFrontendCleaner()
 	if err != nil {
@@ -74,6 +70,36 @@ func TestFrontendCleaner_Domain(t *testing.T) {
 	cleaner, _ := NewFrontendCleaner()
 	if cleaner.Domain() != config.DomainFrontend {
 		t.Errorf("Expected domain DomainFrontend, got %v", cleaner.Domain())
+	}
+}
+
+// TestCleaners_DomainMatchesOwnCategory guards against a Domain() method
+// returning a copy-pasted constant from a different cleaner (previously
+// Backend/Mobile/DevOps/DataML all reported DomainFrontend).
+func TestCleaners_DomainMatchesOwnCategory(t *testing.T) {
+	tests := []struct {
+		name        string
+		constructor func() (Cleaner, error)
+		want        config.Domain
+	}{
+		{"Frontend", NewFrontendCleaner, config.DomainFrontend},
+		{"Backend", NewBackendCleaner, config.DomainBackend},
+		{"Mobile", NewMobileCleaner, config.DomainMobile},
+		{"DevOps", NewDevOpsCleaner, config.DomainDevOps},
+		{"DataML", NewDataMLCleaner, config.DomainDataML},
+		{"AI", NewAICleaner, config.DomainAI},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c, err := tt.constructor()
+			if err != nil {
+				t.Fatalf("constructor error = %v", err)
+			}
+			if got := c.Domain(); got != tt.want {
+				t.Errorf("Domain() = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }
 
@@ -201,10 +227,6 @@ func TestFrontendCleaner_Clean_ContextCancellation(t *testing.T) {
 	}
 }
 
-// =============================================================================
-// BackendCleaner Tests
-// =============================================================================
-
 func TestNewBackendCleaner(t *testing.T) {
 	cleaner, err := NewBackendCleaner()
 	if err != nil {
@@ -311,10 +333,6 @@ func TestBackendCleaner_Clean_Actual(t *testing.T) {
 	}
 }
 
-// =============================================================================
-// MobileCleaner Tests
-// =============================================================================
-
 func TestNewMobileCleaner(t *testing.T) {
 	cleaner, err := NewMobileCleaner()
 	if err != nil {
@@ -417,10 +435,6 @@ func TestMobileCleaner_Clean_Actual(t *testing.T) {
 	}
 }
 
-// =============================================================================
-// DevOpsCleaner Tests
-// =============================================================================
-
 func TestNewDevOpsCleaner(t *testing.T) {
 	cleaner, err := NewDevOpsCleaner()
 	if err != nil {
@@ -520,10 +534,6 @@ func TestDevOpsCleaner_Clean_Actual(t *testing.T) {
 		t.Error("Directory was not deleted")
 	}
 }
-
-// =============================================================================
-// DataMLCleaner Tests
-// =============================================================================
 
 func TestNewDataMLCleaner(t *testing.T) {
 	cleaner, err := NewDataMLCleaner()
@@ -625,11 +635,7 @@ func TestDataMLCleaner_Clean_Actual(t *testing.T) {
 	}
 }
 
-// =============================================================================
-// SystemCleaner Tests
-// =============================================================================
-
-func TestNewSystemCleaners(t *testing.T) {
+func TestNewSystemCleaner(t *testing.T) {
 	tests := []struct {
 		name     string
 		factory  func() Cleaner
@@ -690,10 +696,6 @@ func TestSystemCleaner_Detect(t *testing.T) {
 	}
 }
 
-// =============================================================================
-// CleanTarget and CleanResult Tests
-// =============================================================================
-
 func TestCleanTarget_Fields(t *testing.T) {
 	target := CleanTarget{
 		Path:        "/tmp/test",
@@ -716,7 +718,7 @@ func TestCleanTarget_Fields(t *testing.T) {
 	}
 }
 
-func TestCleanResult_Fields(t *testing.T) {
+func TestCleanResult_Structure(t *testing.T) {
 	target := CleanTarget{
 		Path:        "/tmp/test",
 		Description: "Test target",
@@ -745,11 +747,7 @@ func TestCleanResult_Fields(t *testing.T) {
 	}
 }
 
-// =============================================================================
-// Safety Level Filtering Tests
-// =============================================================================
-
-func TestCleanLevel_AllowsSafety(t *testing.T) {
+func TestSafetyLevelFiltering(t *testing.T) {
 	tests := []struct {
 		level    config.CleanLevel
 		safety   config.SafetyLevel
@@ -779,10 +777,6 @@ func TestCleanLevel_AllowsSafety(t *testing.T) {
 		})
 	}
 }
-
-// =============================================================================
-// Multiple Targets Cleaning Tests
-// =============================================================================
 
 func TestCleaner_CleanMultipleTargets(t *testing.T) {
 	cleaner, _ := NewFrontendCleaner()
@@ -826,10 +820,6 @@ func TestCleaner_CleanMultipleTargets(t *testing.T) {
 		}
 	}
 }
-
-// =============================================================================
-// Error Handling Tests
-// =============================================================================
 
 func TestCleaner_CleanNonExistentPath(t *testing.T) {
 	cleaner, _ := NewFrontendCleaner()

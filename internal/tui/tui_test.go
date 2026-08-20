@@ -10,9 +10,9 @@ import (
 	"github.com/0SansNom/epurer/internal/config"
 )
 
-// =============================================================================
+
 // CleanItem Tests
-// =============================================================================
+
 
 func TestCleanItem_Title_Selected(t *testing.T) {
 	item := CleanItem{
@@ -75,9 +75,9 @@ func TestCleanItem_FilterValue(t *testing.T) {
 	}
 }
 
-// =============================================================================
+
 // State Tests
-// =============================================================================
+
 
 func TestState_Constants(t *testing.T) {
 	// Verify state constants are distinct
@@ -106,9 +106,9 @@ func TestState_Constants(t *testing.T) {
 	}
 }
 
-// =============================================================================
+
 // NewModel Tests
-// =============================================================================
+
 
 func TestNewModel(t *testing.T) {
 	targets := map[string][]cleaner.CleanTarget{
@@ -204,9 +204,9 @@ func TestNewModel_CalculatesTotalSize(t *testing.T) {
 	}
 }
 
-// =============================================================================
+
 // Model.Init Tests
-// =============================================================================
+
 
 func TestModel_Init(t *testing.T) {
 	model := NewModel(map[string][]cleaner.CleanTarget{}, false)
@@ -219,9 +219,9 @@ func TestModel_Init(t *testing.T) {
 	}
 }
 
-// =============================================================================
+
 // Model.Update Tests
-// =============================================================================
+
 
 func TestModel_Update_Quit(t *testing.T) {
 	model := NewModel(map[string][]cleaner.CleanTarget{
@@ -478,9 +478,9 @@ func TestModel_Update_CleanedMsg_Complete(t *testing.T) {
 	}
 }
 
-// =============================================================================
+
 // Model.View Tests
-// =============================================================================
+
 
 func TestModel_View_Quitting(t *testing.T) {
 	model := NewModel(map[string][]cleaner.CleanTarget{}, false)
@@ -594,9 +594,9 @@ func TestModel_View_StateDone_DryRun(t *testing.T) {
 	}
 }
 
-// =============================================================================
+
 // keyMap Tests
-// =============================================================================
+
 
 func TestNewKeyMap(t *testing.T) {
 	km := newKeyMap()
@@ -623,9 +623,9 @@ func TestNewKeyMap(t *testing.T) {
 	}
 }
 
-// =============================================================================
+
 // cleanedMsg Tests
-// =============================================================================
+
 
 func TestCleanedMsg(t *testing.T) {
 	msg := cleanedMsg{size: 2048}
@@ -635,9 +635,9 @@ func TestCleanedMsg(t *testing.T) {
 	}
 }
 
-// =============================================================================
+
 // Style Tests
-// =============================================================================
+
 
 func TestStyles_Initialized(t *testing.T) {
 	// Verify that all style variables are initialized and don't panic
@@ -667,9 +667,9 @@ func TestStyles_Initialized(t *testing.T) {
 	}
 }
 
-// =============================================================================
+
 // Integration Tests
-// =============================================================================
+
 
 func TestModel_FullSelectWorkflow(t *testing.T) {
 	// Create model with multiple domains
@@ -762,9 +762,9 @@ func TestModel_CleaningWorkflow(t *testing.T) {
 	}
 }
 
-// =============================================================================
+
 // Edge Cases
-// =============================================================================
+
 
 func TestModel_LargeNumberOfItems(t *testing.T) {
 	targets := make(map[string][]cleaner.CleanTarget)

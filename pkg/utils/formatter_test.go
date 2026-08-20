@@ -5,9 +5,6 @@ import (
 	"time"
 )
 
-// =============================================================================
-// FormatBytes Tests
-// =============================================================================
 
 func TestFormatBytes(t *testing.T) {
 	tests := []struct {
@@ -37,10 +34,6 @@ func TestFormatBytes(t *testing.T) {
 	}
 }
 
-// =============================================================================
-// FormatCount Tests
-// =============================================================================
-
 func TestFormatCount(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -68,10 +61,6 @@ func TestFormatCount(t *testing.T) {
 	}
 }
 
-// =============================================================================
-// FormatDuration Tests
-// =============================================================================
-
 func TestFormatDuration(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -97,10 +86,6 @@ func TestFormatDuration(t *testing.T) {
 		})
 	}
 }
-
-// =============================================================================
-// FormatPercentage Tests
-// =============================================================================
 
 func TestFormatPercentage(t *testing.T) {
 	tests := []struct {

@@ -96,6 +96,11 @@ type Domain int
 const (
 	DomainSystem   Domain = iota // System-level cleaners (trash, cache, logs)
 	DomainFrontend               // Frontend development (node_modules, npm cache)
+	DomainBackend                // Backend development (Python, Java, Go, Rust, PHP, Ruby)
+	DomainMobile                 // Mobile development (Xcode, Android, Flutter)
+	DomainDevOps                 // DevOps tooling (Docker, Kubernetes, Terraform)
+	DomainDataML                 // Data science / ML tooling (Conda, Jupyter, TensorFlow)
+	DomainAI                     // AI coding tool caches (Claude, Cursor, Copilot, ...)
 )
 
 // String returns human-readable representation
@@ -105,6 +110,16 @@ func (d Domain) String() string {
 		return "System"
 	case DomainFrontend:
 		return "Frontend"
+	case DomainBackend:
+		return "Backend"
+	case DomainMobile:
+		return "Mobile"
+	case DomainDevOps:
+		return "DevOps"
+	case DomainDataML:
+		return "Data/ML"
+	case DomainAI:
+		return "AI"
 	default:
 		return "Unknown"
 	}

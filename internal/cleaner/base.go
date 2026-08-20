@@ -4,6 +4,8 @@ import (
 	"context"
 
 	"github.com/0SansNom/epurer/internal/config"
+	"github.com/0SansNom/epurer/internal/ignorelist"
+	"github.com/0SansNom/epurer/pkg/utils"
 )
 
 // CleanTarget represents a single item that can be cleaned
@@ -39,4 +41,69 @@ type Cleaner interface {
 
 	// Clean executes the actual cleanup operation on the given targets
 	Clean(ctx context.Context, targets []CleanTarget, dryRun bool) ([]CleanResult, error)
+}
+
+// IgnoreAware is implemented by cleaners that scan the filesystem and can
+// therefore respect a persistent ignore list. Cleaners that only touch fixed,
+// well-known paths (e.g. system caches) don't need to implement it.
+type IgnoreAware interface {
+	SetIgnoreList(l *ignorelist.List)
+}
+
+// filterIgnored removes any target whose path is covered by the ignore
+// list. It's for cleaners whose targets are fixed, well-known paths rather
+// than filesystem scan results - scanner-backed cleaners filter earlier via
+// Scanner.SetIgnoreList (which also avoids descending into ignored trees),
+// so they don't need this.
+func filterIgnored(targets []CleanTarget, ignoreList *ignorelist.List) []CleanTarget {
+	if ignoreList == nil {
+		return targets
+	}
+
+	filtered := make([]CleanTarget, 0, len(targets))
+	for _, t := range targets {
+		if !ignoreList.IsIgnored(t.Path) {
+			filtered = append(filtered, t)
+		}
+	}
+
+	return filtered
+}
+
+// CleanTargets removes each target from disk (or, in dry-run mode, just
+// reports what would be freed) and returns one CleanResult per target. It's
+// the shared implementation for cleaners whose targets are plain
+// files/directories with no special handling; a cleaner with special-cased
+// targets (e.g. DevOpsCleaner's "docker:" pseudo-paths, SystemCleaner's
+// command-driven cache types) implements Clean itself instead of calling this.
+func CleanTargets(ctx context.Context, targets []CleanTarget, dryRun bool) ([]CleanResult, error) {
+	results := make([]CleanResult, 0, len(targets))
+
+	for _, target := range targets {
+		result := CleanResult{
+			Target:  target,
+			Success: true,
+		}
+
+		if !dryRun {
+			if err := utils.SafeRemove(target.Path, false); err != nil {
+				result.Success = false
+				result.Error = err
+			} else {
+				result.BytesFreed = target.SizeBytes
+			}
+		} else {
+			result.BytesFreed = target.SizeBytes
+		}
+
+		results = append(results, result)
+
+		select {
+		case <-ctx.Done():
+			return results, ctx.Err()
+		default:
+		}
+	}
+
+	return results, nil
 }

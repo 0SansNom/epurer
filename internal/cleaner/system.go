@@ -8,12 +8,19 @@ import (
 	"path/filepath"
 
 	"github.com/0SansNom/epurer/internal/config"
+	"github.com/0SansNom/epurer/internal/ignorelist"
 	"github.com/0SansNom/epurer/pkg/utils"
 )
 
 // SystemCleaner handles system-level cleanup operations
 type SystemCleaner struct {
 	cleanerType string
+	ignoreList  *ignorelist.List
+}
+
+// SetIgnoreList makes this cleaner respect a persistent ignore list.
+func (s *SystemCleaner) SetIgnoreList(l *ignorelist.List) {
+	s.ignoreList = l
 }
 
 // System cleaner types
@@ -115,46 +122,61 @@ func (s *SystemCleaner) Detect(ctx context.Context) (bool, error) {
 }
 
 func (s *SystemCleaner) Scan(ctx context.Context, cfg *config.Config) ([]CleanTarget, error) {
+	var targets []CleanTarget
+	var err error
+
 	switch s.cleanerType {
 	case TypeTrash:
-		return s.scanTrash()
+		targets, err = s.scanTrash()
 	case TypeCache:
-		return s.scanCaches(cfg)
+		targets, err = s.scanCaches(cfg)
 	case TypeLogs:
-		return s.scanLogs(cfg)
+		targets, err = s.scanLogs(cfg)
 	case TypeTemp:
-		return s.scanTemp()
+		targets, err = s.scanTemp()
 	case TypeDNS:
-		return s.scanDNS()
+		targets, err = s.scanDNS()
 	case TypeHomebrew:
-		return s.scanHomebrew()
+		targets, err = s.scanHomebrew()
 	case TypeXcode:
-		return s.scanXcode()
+		targets, err = s.scanXcode()
 	case TypeLaunchpad:
-		return s.scanLaunchpad()
+		targets, err = s.scanLaunchpad()
 	case TypeIOSBackups:
-		return s.scanIOSBackups(cfg)
+		targets, err = s.scanIOSBackups(cfg)
 	default:
 		return nil, fmt.Errorf("unknown cleaner type: %s", s.cleanerType)
 	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	return filterIgnored(targets, s.ignoreList), nil
 }
 
 func (s *SystemCleaner) Clean(ctx context.Context, targets []CleanTarget, dryRun bool) ([]CleanResult, error) {
 	results := make([]CleanResult, 0, len(targets))
 
 	for _, target := range targets {
+		select {
+		case <-ctx.Done():
+			return results, ctx.Err()
+		default:
+		}
+
 		var result CleanResult
 		result.Target = target
 
 		// Special handling for DNS cache (uses command)
 		if s.cleanerType == TypeDNS {
-			err := s.cleanDNSCache(dryRun)
+			err := s.cleanDNSCache(ctx, dryRun)
 			result.Success = err == nil
 			result.Error = err
 			result.BytesFreed = 0 // DNS cache doesn't have measurable size
 		} else if s.cleanerType == TypeHomebrew {
 			// Homebrew uses its own cleanup command
-			err := s.cleanHomebrew(dryRun)
+			err := s.cleanHomebrew(ctx, dryRun)
 			result.Success = err == nil
 			result.Error = err
 			result.BytesFreed = target.SizeBytes // Estimate
@@ -466,31 +488,31 @@ func (s *SystemCleaner) scanIOSBackups(cfg *config.Config) ([]CleanTarget, error
 
 // Private clean methods
 
-func (s *SystemCleaner) cleanDNSCache(dryRun bool) error {
+func (s *SystemCleaner) cleanDNSCache(ctx context.Context, dryRun bool) error {
 	if dryRun {
 		return nil
 	}
 
 	// Flush DNS cache
-	cmd := exec.Command("dscacheutil", "-flushcache")
+	cmd := exec.CommandContext(ctx, "dscacheutil", "-flushcache")
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("failed to flush DNS cache: %w", err)
 	}
 
 	// Kill mDNSResponder (requires sudo for full effect)
-	cmd = exec.Command("killall", "-HUP", "mDNSResponder")
+	cmd = exec.CommandContext(ctx, "killall", "-HUP", "mDNSResponder")
 	cmd.Run() // Ignore error if we don't have sudo
 
 	return nil
 }
 
-func (s *SystemCleaner) cleanHomebrew(dryRun bool) error {
+func (s *SystemCleaner) cleanHomebrew(ctx context.Context, dryRun bool) error {
 	if dryRun {
 		return nil
 	}
 
 	// Run brew cleanup
-	cmd := exec.Command("brew", "cleanup", "--prune=all")
+	cmd := exec.CommandContext(ctx, "brew", "cleanup", "--prune=all")
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("failed to run brew cleanup: %w", err)
 	}

@@ -7,10 +7,6 @@ import (
 	"testing"
 )
 
-// =============================================================================
-// NewDetector Tests
-// =============================================================================
-
 func TestNewDetector(t *testing.T) {
 	detector, err := NewDetector()
 	if err != nil {
@@ -23,10 +19,6 @@ func TestNewDetector(t *testing.T) {
 		t.Error("detector.homePath is empty")
 	}
 }
-
-// =============================================================================
-// DetectionResult Tests
-// =============================================================================
 
 func TestDetectionResult_Structure(t *testing.T) {
 	result := DetectionResult{
@@ -53,10 +45,6 @@ func TestDetectionResult_Structure(t *testing.T) {
 		t.Errorf("Expected 1 dataml tool, got %d", len(result.DataML))
 	}
 }
-
-// =============================================================================
-// DetectAll Tests
-// =============================================================================
 
 func TestDetectAll(t *testing.T) {
 	detector, err := NewDetector()
@@ -91,10 +79,6 @@ func TestDetectAll(t *testing.T) {
 	t.Logf("Detected DataML: %v", result.DataML)
 }
 
-// =============================================================================
-// HasXxx Tests
-// =============================================================================
-
 func TestHasFrontend(t *testing.T) {
 	detector, _ := NewDetector()
 	result := detector.HasFrontend()
@@ -125,10 +109,6 @@ func TestHasDataML(t *testing.T) {
 	result := detector.HasDataML()
 	t.Logf("HasDataML: %v", result)
 }
-
-// =============================================================================
-// GetSummary Tests
-// =============================================================================
 
 func TestGetSummary(t *testing.T) {
 	detector, _ := NewDetector()
@@ -165,10 +145,6 @@ func TestGetSummary_Format(t *testing.T) {
 	}
 }
 
-// =============================================================================
-// contains Helper Tests
-// =============================================================================
-
 func TestContains(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -194,10 +170,6 @@ func TestContains(t *testing.T) {
 		})
 	}
 }
-
-// =============================================================================
-// hasPythonPackage Tests
-// =============================================================================
 
 func TestHasPythonPackage_NonExistent(t *testing.T) {
 	detector, _ := NewDetector()
@@ -238,10 +210,6 @@ func TestHasPythonPackage_WithMockDir(t *testing.T) {
 		t.Error("hasPythonPackage detected non-existent package")
 	}
 }
-
-// =============================================================================
-// Integration Tests
-// =============================================================================
 
 func TestDetector_Integration(t *testing.T) {
 	detector, err := NewDetector()
@@ -302,10 +270,6 @@ func TestDetector_SummaryMatchesDetection(t *testing.T) {
 		t.Error("Summary missing Data/ML section")
 	}
 }
-
-// =============================================================================
-// Edge Cases
-// =============================================================================
 
 func TestDetector_NoTools(t *testing.T) {
 	// Create detector with non-existent home (edge case)

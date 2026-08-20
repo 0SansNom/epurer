@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/0SansNom/epurer/internal/config"
+	"github.com/0SansNom/epurer/internal/ignorelist"
 	"github.com/0SansNom/epurer/internal/scanner"
 	"github.com/0SansNom/epurer/pkg/utils"
 )
@@ -27,12 +28,17 @@ func NewMobileCleaner() (Cleaner, error) {
 	}, nil
 }
 
+// SetIgnoreList makes this cleaner respect a persistent ignore list.
+func (m *MobileCleaner) SetIgnoreList(l *ignorelist.List) {
+	m.scanner.SetIgnoreList(l)
+}
+
 func (m *MobileCleaner) Name() string {
 	return "Mobile"
 }
 
 func (m *MobileCleaner) Domain() config.Domain {
-	return config.DomainFrontend // TODO: Add DomainMobile to config
+	return config.DomainMobile
 }
 
 func (m *MobileCleaner) Detect(ctx context.Context) (bool, error) {
@@ -51,7 +57,7 @@ func (m *MobileCleaner) Scan(ctx context.Context, cfg *config.Config) ([]CleanTa
 		return nil, err
 	}
 
-	// === iOS / Xcode (VeryHigh impact - can be 50-100 GB) ===
+
 
 	// DerivedData (Safe - always rebuilt)
 	derivedDataPath := filepath.Join(home, "Library", "Developer", "Xcode", "DerivedData")
@@ -183,7 +189,7 @@ func (m *MobileCleaner) Scan(ctx context.Context, cfg *config.Config) ([]CleanTa
 		}
 	}
 
-	// === Android ===
+
 
 	// Android build folders (Safe - rebuilt)
 	androidBuildTargets := m.scanAndroidBuildFolders(ctx)
@@ -236,7 +242,7 @@ func (m *MobileCleaner) Scan(ctx context.Context, cfg *config.Config) ([]CleanTa
 		}
 	}
 
-	// === CocoaPods ===
+
 
 	// CocoaPods cache (Safe)
 	podsCachePath := filepath.Join(home, "Library", "Caches", "CocoaPods")
@@ -252,7 +258,7 @@ func (m *MobileCleaner) Scan(ctx context.Context, cfg *config.Config) ([]CleanTa
 		}
 	}
 
-	// === Flutter ===
+
 
 	// .dart_tool (Safe - rebuilt)
 	dartToolTargets := m.scanDartTool(ctx)
@@ -266,36 +272,7 @@ func (m *MobileCleaner) Scan(ctx context.Context, cfg *config.Config) ([]CleanTa
 }
 
 func (m *MobileCleaner) Clean(ctx context.Context, targets []CleanTarget, dryRun bool) ([]CleanResult, error) {
-	results := make([]CleanResult, 0, len(targets))
-
-	for _, target := range targets {
-		result := CleanResult{
-			Target:  target,
-			Success: true,
-		}
-
-		if !dryRun {
-			err := utils.SafeRemove(target.Path, false)
-			if err != nil {
-				result.Success = false
-				result.Error = err
-			} else {
-				result.BytesFreed = target.SizeBytes
-			}
-		} else {
-			result.BytesFreed = target.SizeBytes
-		}
-
-		results = append(results, result)
-
-		select {
-		case <-ctx.Done():
-			return results, ctx.Err()
-		default:
-		}
-	}
-
-	return results, nil
+	return CleanTargets(ctx, targets, dryRun)
 }
 
 // scanAndroidBuildFolders scans for Android build folders

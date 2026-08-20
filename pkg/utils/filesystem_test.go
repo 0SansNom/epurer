@@ -6,10 +6,6 @@ import (
 	"testing"
 )
 
-// =============================================================================
-// PathExists Tests
-// =============================================================================
-
 func TestPathExists(t *testing.T) {
 	// Create a temporary file
 	tmpFile, err := os.CreateTemp("", "pathexists-test-*")
@@ -43,10 +39,6 @@ func TestPathExists(t *testing.T) {
 	}
 }
 
-// =============================================================================
-// ExpandHome Tests
-// =============================================================================
-
 func TestExpandHome(t *testing.T) {
 	home, err := os.UserHomeDir()
 	if err != nil {
@@ -79,10 +71,6 @@ func TestExpandHome(t *testing.T) {
 		})
 	}
 }
-
-// =============================================================================
-// GetDirSize Tests
-// =============================================================================
 
 func TestGetDirSize(t *testing.T) {
 	// Create a temporary directory with files
@@ -155,10 +143,6 @@ func TestGetDirSize_SingleFile(t *testing.T) {
 		t.Errorf("GetDirSize(file) = %d, want %d", size, expectedSize)
 	}
 }
-
-// =============================================================================
-// SafeRemove Tests
-// =============================================================================
 
 func TestSafeRemove_DryRun(t *testing.T) {
 	// Create a temporary file
@@ -237,9 +221,36 @@ func TestSafeRemove_NonExistent(t *testing.T) {
 	}
 }
 
-// =============================================================================
-// CommandExists Tests
-// =============================================================================
+func TestSafeRemove_RefusesProtectedPaths(t *testing.T) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		t.Fatalf("UserHomeDir() error = %v", err)
+	}
+
+	protected := []string{
+		"",
+		"/",
+		"/System",
+		"/Library",
+		"/Applications",
+		"/Users",
+		home,
+		home + "/", // unclean but should still resolve to home
+	}
+
+	for _, path := range protected {
+		t.Run(path, func(t *testing.T) {
+			if err := SafeRemove(path, false); err == nil {
+				t.Errorf("SafeRemove(%q, false) = nil error, want a refusal", path)
+			}
+			// Dry-run must also refuse - callers shouldn't get a false
+			// "this would be safe to remove" signal for a protected path.
+			if err := SafeRemove(path, true); err == nil {
+				t.Errorf("SafeRemove(%q, true) = nil error, want a refusal", path)
+			}
+		})
+	}
+}
 
 func TestCommandExists(t *testing.T) {
 	tests := []struct {
@@ -262,10 +273,6 @@ func TestCommandExists(t *testing.T) {
 		})
 	}
 }
-
-// =============================================================================
-// IsWritable Tests
-// =============================================================================
 
 func TestIsWritable_WritableDir(t *testing.T) {
 	tmpDir, err := os.MkdirTemp("", "iswritable-*")

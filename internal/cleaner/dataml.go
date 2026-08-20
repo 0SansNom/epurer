@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/0SansNom/epurer/internal/config"
+	"github.com/0SansNom/epurer/internal/ignorelist"
 	"github.com/0SansNom/epurer/internal/scanner"
 	"github.com/0SansNom/epurer/pkg/utils"
 )
@@ -27,12 +28,17 @@ func NewDataMLCleaner() (Cleaner, error) {
 	}, nil
 }
 
+// SetIgnoreList makes this cleaner respect a persistent ignore list.
+func (d *DataMLCleaner) SetIgnoreList(l *ignorelist.List) {
+	d.scanner.SetIgnoreList(l)
+}
+
 func (d *DataMLCleaner) Name() string {
 	return "Data/ML"
 }
 
 func (d *DataMLCleaner) Domain() config.Domain {
-	return config.DomainFrontend // TODO: Add DomainDataML to config
+	return config.DomainDataML
 }
 
 func (d *DataMLCleaner) Detect(ctx context.Context) (bool, error) {
@@ -48,7 +54,7 @@ func (d *DataMLCleaner) Scan(ctx context.Context, cfg *config.Config) ([]CleanTa
 		return nil, err
 	}
 
-	// === Conda ===
+
 
 	// Conda package cache (Safe - can be re-downloaded)
 	condaPkgsPath := filepath.Join(home, ".conda", "pkgs")
@@ -92,7 +98,7 @@ func (d *DataMLCleaner) Scan(ctx context.Context, cfg *config.Config) ([]CleanTa
 		}
 	}
 
-	// === Jupyter ===
+
 
 	// Jupyter runtime files (Safe)
 	jupyterRuntimePath := filepath.Join(home, "Library", "Jupyter", "runtime")
@@ -127,7 +133,7 @@ func (d *DataMLCleaner) Scan(ctx context.Context, cfg *config.Config) ([]CleanTa
 	checkpointTargets := d.scanPattern(ctx, ".ipynb_checkpoints")
 	targets = append(targets, checkpointTargets...)
 
-	// === TensorFlow ===
+
 
 	// TensorFlow cache
 	tfCachePath := filepath.Join(home, ".keras")
@@ -159,7 +165,7 @@ func (d *DataMLCleaner) Scan(ctx context.Context, cfg *config.Config) ([]CleanTa
 		}
 	}
 
-	// === PyTorch ===
+
 
 	// PyTorch hub cache
 	torchHubPath := filepath.Join(home, ".cache", "torch", "hub")
@@ -175,7 +181,7 @@ func (d *DataMLCleaner) Scan(ctx context.Context, cfg *config.Config) ([]CleanTa
 		}
 	}
 
-	// === Hugging Face ===
+
 
 	// Hugging Face transformers cache
 	hfCachePath := filepath.Join(home, ".cache", "huggingface")
@@ -191,7 +197,7 @@ func (d *DataMLCleaner) Scan(ctx context.Context, cfg *config.Config) ([]CleanTa
 		}
 	}
 
-	// === Weights & Biases ===
+
 
 	// W&B cache
 	wandbCachePath := filepath.Join(home, ".cache", "wandb")
@@ -220,7 +226,7 @@ func (d *DataMLCleaner) Scan(ctx context.Context, cfg *config.Config) ([]CleanTa
 		}
 	}
 
-	// === MLflow ===
+
 
 	// MLflow artifacts (Moderate - experiment data)
 	if cfg.CleanLevel.AllowsSafety(config.Moderate) {
@@ -228,7 +234,7 @@ func (d *DataMLCleaner) Scan(ctx context.Context, cfg *config.Config) ([]CleanTa
 		targets = append(targets, mlflowTargets...)
 	}
 
-	// === General Data Science ===
+
 
 	// .DS_Store files (Safe)
 	dsStoreTargets := d.scanPattern(ctx, ".DS_Store")
@@ -238,36 +244,7 @@ func (d *DataMLCleaner) Scan(ctx context.Context, cfg *config.Config) ([]CleanTa
 }
 
 func (d *DataMLCleaner) Clean(ctx context.Context, targets []CleanTarget, dryRun bool) ([]CleanResult, error) {
-	results := make([]CleanResult, 0, len(targets))
-
-	for _, target := range targets {
-		result := CleanResult{
-			Target:  target,
-			Success: true,
-		}
-
-		if !dryRun {
-			err := utils.SafeRemove(target.Path, false)
-			if err != nil {
-				result.Success = false
-				result.Error = err
-			} else {
-				result.BytesFreed = target.SizeBytes
-			}
-		} else {
-			result.BytesFreed = target.SizeBytes
-		}
-
-		results = append(results, result)
-
-		select {
-		case <-ctx.Done():
-			return results, ctx.Err()
-		default:
-		}
-	}
-
-	return results, nil
+	return CleanTargets(ctx, targets, dryRun)
 }
 
 // scanPattern scans for a specific pattern

@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/0SansNom/epurer/internal/config"
+	"github.com/0SansNom/epurer/internal/ignorelist"
 	"github.com/0SansNom/epurer/internal/scanner"
 	"github.com/0SansNom/epurer/pkg/utils"
 )
@@ -25,6 +26,11 @@ func NewFrontendCleaner() (Cleaner, error) {
 	return &FrontendCleaner{
 		scanner: s,
 	}, nil
+}
+
+// SetIgnoreList makes this cleaner respect a persistent ignore list.
+func (f *FrontendCleaner) SetIgnoreList(l *ignorelist.List) {
+	f.scanner.SetIgnoreList(l)
 }
 
 func (f *FrontendCleaner) Name() string {
@@ -50,9 +56,6 @@ func (f *FrontendCleaner) Scan(ctx context.Context, cfg *config.Config) ([]Clean
 		return nil, err
 	}
 
-	// === Package manager caches (Safe - always can be rebuilt) ===
-
-	// npm cache
 	npmCachePath := filepath.Join(home, ".npm")
 	if utils.PathExists(npmCachePath) {
 		size, _ := utils.GetDirSize(npmCachePath)
@@ -66,7 +69,6 @@ func (f *FrontendCleaner) Scan(ctx context.Context, cfg *config.Config) ([]Clean
 		}
 	}
 
-	// yarn cache
 	yarnCachePath := filepath.Join(home, ".cache", "yarn")
 	if utils.PathExists(yarnCachePath) {
 		size, _ := utils.GetDirSize(yarnCachePath)
@@ -80,7 +82,6 @@ func (f *FrontendCleaner) Scan(ctx context.Context, cfg *config.Config) ([]Clean
 		}
 	}
 
-	// Yarn global cache (Library/Caches/Yarn on macOS)
 	yarnGlobalCache := filepath.Join(home, "Library", "Caches", "Yarn")
 	if utils.PathExists(yarnGlobalCache) {
 		size, _ := utils.GetDirSize(yarnGlobalCache)
@@ -94,7 +95,6 @@ func (f *FrontendCleaner) Scan(ctx context.Context, cfg *config.Config) ([]Clean
 		}
 	}
 
-	// pnpm store
 	pnpmStorePath := filepath.Join(home, ".pnpm-store")
 	if utils.PathExists(pnpmStorePath) {
 		size, _ := utils.GetDirSize(pnpmStorePath)
@@ -108,115 +108,37 @@ func (f *FrontendCleaner) Scan(ctx context.Context, cfg *config.Config) ([]Clean
 		}
 	}
 
-	// === node_modules (Moderate - needs npm install) ===
-
 	if cfg.CleanLevel.AllowsSafety(config.Moderate) {
 		nodeModulesTargets := f.scanNodeModules(ctx)
 		targets = append(targets, nodeModulesTargets...)
 	}
 
-	// === Build outputs (Safe - easily rebuilt) ===
+	targets = append(targets, f.scanPattern(ctx, "dist")...)
+	targets = append(targets, f.scanPattern(ctx, "build")...)
+	targets = append(targets, f.scanPattern(ctx, "out")...)
+	targets = append(targets, f.scanPattern(ctx, ".next")...)
 
-	// dist folders
-	distTargets := f.scanPattern(ctx, "dist")
-	targets = append(targets, distTargets...)
+	targets = append(targets, f.scanPattern(ctx, ".vite")...)
+	targets = append(targets, f.scanPattern(ctx, ".parcel-cache")...)
+	targets = append(targets, f.scanNestedCache(ctx, ".cache/webpack")...)
+	targets = append(targets, f.scanNestedCache(ctx, ".cache/turbo")...)
 
-	// build folders
-	buildTargets := f.scanPattern(ctx, "build")
-	targets = append(targets, buildTargets...)
+	targets = append(targets, f.scanPattern(ctx, "coverage")...)
+	targets = append(targets, f.scanPattern(ctx, ".nyc_output")...)
 
-	// out folders (Next.js, etc.)
-	outTargets := f.scanPattern(ctx, "out")
-	targets = append(targets, outTargets...)
+	targets = append(targets, f.scanPattern(ctx, ".eslintcache")...)
 
-	// .next (Next.js)
-	nextTargets := f.scanPattern(ctx, ".next")
-	targets = append(targets, nextTargets...)
+	targets = append(targets, f.scanPattern(ctx, "storybook-static")...)
 
-	// === Bundler caches (Safe) ===
-
-	// Vite cache
-	viteTargets := f.scanPattern(ctx, ".vite")
-	targets = append(targets, viteTargets...)
-
-	// Parcel cache
-	parcelTargets := f.scanPattern(ctx, ".parcel-cache")
-	targets = append(targets, parcelTargets...)
-
-	// Webpack cache (inside node_modules/.cache/webpack)
-	// We'll get this with a more specific scan
-	webpackCacheTargets := f.scanNestedCache(ctx, ".cache/webpack")
-	targets = append(targets, webpackCacheTargets...)
-
-	// Turbo cache
-	turboCacheTargets := f.scanNestedCache(ctx, ".cache/turbo")
-	targets = append(targets, turboCacheTargets...)
-
-	// === Testing coverage (Safe) ===
-
-	coverageTargets := f.scanPattern(ctx, "coverage")
-	targets = append(targets, coverageTargets...)
-
-	nycTargets := f.scanPattern(ctx, ".nyc_output")
-	targets = append(targets, nycTargets...)
-
-	// === Linter caches (Safe) ===
-
-	eslintTargets := f.scanPattern(ctx, ".eslintcache")
-	targets = append(targets, eslintTargets...)
-
-	// === Storybook (Safe) ===
-
-	storybookTargets := f.scanPattern(ctx, "storybook-static")
-	targets = append(targets, storybookTargets...)
-
-	// === Log files (Safe) ===
-
-	npmLogTargets := f.scanPattern(ctx, "npm-debug.log*")
-	targets = append(targets, npmLogTargets...)
-
-	yarnLogTargets := f.scanPattern(ctx, "yarn-error.log*")
-	targets = append(targets, yarnLogTargets...)
-
-	yarnDebugTargets := f.scanPattern(ctx, "yarn-debug.log*")
-	targets = append(targets, yarnDebugTargets...)
+	targets = append(targets, f.scanPattern(ctx, "npm-debug.log*")...)
+	targets = append(targets, f.scanPattern(ctx, "yarn-error.log*")...)
+	targets = append(targets, f.scanPattern(ctx, "yarn-debug.log*")...)
 
 	return targets, nil
 }
 
 func (f *FrontendCleaner) Clean(ctx context.Context, targets []CleanTarget, dryRun bool) ([]CleanResult, error) {
-	results := make([]CleanResult, 0, len(targets))
-
-	for _, target := range targets {
-		result := CleanResult{
-			Target:  target,
-			Success: true,
-		}
-
-		if !dryRun {
-			err := utils.SafeRemove(target.Path, false)
-			if err != nil {
-				result.Success = false
-				result.Error = err
-			} else {
-				result.BytesFreed = target.SizeBytes
-			}
-		} else {
-			// In dry-run, just report what would be freed
-			result.BytesFreed = target.SizeBytes
-		}
-
-		results = append(results, result)
-
-		// Check for cancellation
-		select {
-		case <-ctx.Done():
-			return results, ctx.Err()
-		default:
-		}
-	}
-
-	return results, nil
+	return CleanTargets(ctx, targets, dryRun)
 }
 
 // scanNodeModules scans for node_modules directories
