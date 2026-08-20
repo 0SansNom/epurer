@@ -17,24 +17,35 @@ import (
 type analyzerState int
 
 const (
-	analyzerLoading analyzerState = iota
-	analyzerBrowse
+	analyzerBrowse analyzerState = iota
 	analyzerConfirmDelete
 )
 
 // AnalyzerModel is the Bubble Tea model behind `epurer analyze`. It's a
 // read-only directory browser sorted by size until the user explicitly
 // requests deletion of a specific entry, which always requires confirmation.
+//
+// Directory loads run in the background rather than blocking the UI in a
+// dedicated "loading" state: entering a directory with many/large children
+// can take a while (ListDir sizes every subdirectory recursively), and if
+// key handling only worked in a post-load state, the user would be stuck
+// unable to even quit until the scan finished. The browse view - and its
+// keybindings, including q and backspace - stay live throughout; loadGen
+// discards any result for a directory the user has since navigated away
+// from.
 type AnalyzerModel struct {
-	state    analyzerState
-	path     string
-	entries  []analyzer.Entry
-	cursor   int
-	spinner  spinner.Model
-	dryRun   bool
-	err      error
-	message  string
-	quitting bool
+	state       analyzerState
+	path        string
+	entries     []analyzer.Entry
+	cursor      int
+	spinner     spinner.Model
+	dryRun      bool
+	err         error
+	message     string
+	quitting    bool
+	loading     bool
+	pendingPath string
+	loadGen     int
 }
 
 // NewAnalyzerModel creates a new AnalyzerModel rooted at path.
@@ -44,27 +55,30 @@ func NewAnalyzerModel(path string, dryRun bool) AnalyzerModel {
 	s.Style = lipgloss.NewStyle().Foreground(primaryColor)
 
 	return AnalyzerModel{
-		state:   analyzerLoading,
-		path:    path,
-		spinner: s,
-		dryRun:  dryRun,
+		state:       analyzerBrowse,
+		path:        path,
+		spinner:     s,
+		dryRun:      dryRun,
+		loading:     true,
+		pendingPath: path,
 	}
 }
 
 func (m AnalyzerModel) Init() tea.Cmd {
-	return tea.Batch(m.spinner.Tick, loadDir(m.path))
+	return tea.Batch(m.spinner.Tick, loadDir(m.path, m.loadGen))
 }
 
 type dirLoadedMsg struct {
 	path    string
 	entries []analyzer.Entry
 	err     error
+	gen     int
 }
 
-func loadDir(path string) tea.Cmd {
+func loadDir(path string, gen int) tea.Cmd {
 	return func() tea.Msg {
 		entries, err := analyzer.ListDir(path)
-		return dirLoadedMsg{path: path, entries: entries, err: err}
+		return dirLoadedMsg{path: path, entries: entries, err: err, gen: gen}
 	}
 }
 
@@ -89,14 +103,28 @@ func deleteEntry(path string, dryRun bool) tea.Cmd {
 	}
 }
 
+// startLoad kicks off a background load of path, invalidating any load
+// already in flight (its result will arrive with a stale gen and be
+// discarded when it lands).
+func (m *AnalyzerModel) startLoad(path string) tea.Cmd {
+	m.loadGen++
+	m.loading = true
+	m.pendingPath = path
+	return loadDir(path, m.loadGen)
+}
+
 func (m AnalyzerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case dirLoadedMsg:
+		if msg.gen != m.loadGen {
+			return m, nil // stale - user navigated elsewhere before this landed
+		}
+		m.loading = false
+		m.pendingPath = ""
 		m.path = msg.path
 		m.entries = msg.entries
 		m.err = msg.err
 		m.cursor = 0
-		m.state = analyzerBrowse
 		return m, nil
 
 	case revealedMsg:
@@ -115,8 +143,9 @@ func (m AnalyzerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		} else {
 			m.message = fmt.Sprintf("Removed %s", filepath.Base(msg.path))
 		}
-		m.state = analyzerLoading
-		return m, loadDir(m.path)
+		m.state = analyzerBrowse
+		cmd := m.startLoad(m.path)
+		return m, cmd
 
 	case spinner.TickMsg:
 		var cmd tea.Cmd
@@ -144,16 +173,16 @@ func (m AnalyzerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				sel := m.entries[m.cursor]
 				if sel.IsDir {
-					m.state = analyzerLoading
 					m.message = ""
-					return m, loadDir(sel.Path)
+					cmd := m.startLoad(sel.Path)
+					return m, cmd
 				}
 			case "backspace", "left", "h":
 				parent := filepath.Dir(m.path)
 				if parent != m.path {
-					m.state = analyzerLoading
 					m.message = ""
-					return m, loadDir(parent)
+					cmd := m.startLoad(parent)
+					return m, cmd
 				}
 			case "r":
 				if len(m.entries) == 0 {
@@ -169,7 +198,7 @@ func (m AnalyzerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			switch msg.String() {
 			case "y", "Y":
 				sel := m.entries[m.cursor]
-				m.state = analyzerLoading
+				m.state = analyzerBrowse
 				return m, deleteEntry(sel.Path, m.dryRun)
 			case "n", "N", "q", "ctrl+c":
 				m.state = analyzerBrowse
@@ -195,13 +224,7 @@ func (m AnalyzerModel) View() string {
 	b.WriteString(headerBox.Render(header))
 	b.WriteString("\n")
 
-	switch m.state {
-	case analyzerLoading:
-		b.WriteString(m.spinner.View())
-		b.WriteString(" Scanning...")
-		return b.String()
-
-	case analyzerConfirmDelete:
+	if m.state == analyzerConfirmDelete {
 		sel := m.entries[m.cursor]
 		confirmMsg := fmt.Sprintf("Delete %q (%s)?", sel.Name, utils.FormatBytes(sel.Size))
 		if m.dryRun {
@@ -213,13 +236,18 @@ func (m AnalyzerModel) View() string {
 		return b.String()
 	}
 
-	if m.err != nil {
+	switch {
+	case m.err != nil:
 		b.WriteString(lipgloss.NewStyle().Foreground(dangerColor).Render(fmt.Sprintf("Error: %v", m.err)))
 		b.WriteString("\n")
-	} else if len(m.entries) == 0 {
+	case m.loading && len(m.entries) == 0:
+		b.WriteString(m.spinner.View())
+		b.WriteString(fmt.Sprintf(" Scanning %s...", m.pendingPath))
+		b.WriteString("\n")
+	case len(m.entries) == 0:
 		b.WriteString(mutedStyle.Render("(empty directory)"))
 		b.WriteString("\n")
-	} else {
+	default:
 		var maxSize int64
 		for _, e := range m.entries {
 			if e.Size > maxSize {
@@ -252,6 +280,12 @@ func (m AnalyzerModel) View() string {
 			b.WriteString(style.Render(line))
 			b.WriteString("\n")
 		}
+	}
+
+	if m.loading && len(m.entries) > 0 {
+		b.WriteString("\n")
+		b.WriteString(mutedStyle.Render(m.spinner.View() + fmt.Sprintf(" Loading %s...", m.pendingPath)))
+		b.WriteString("\n")
 	}
 
 	if m.message != "" {

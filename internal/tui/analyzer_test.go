@@ -17,14 +17,60 @@ func loadedModel(t *testing.T, dir string) AnalyzerModel {
 	if err != nil {
 		t.Fatalf("ListDir() error = %v", err)
 	}
-	newModel, _ := m.Update(dirLoadedMsg{path: dir, entries: entries})
+	newModel, _ := m.Update(dirLoadedMsg{path: dir, entries: entries, gen: m.loadGen})
 	return newModel.(AnalyzerModel)
 }
 
-func TestAnalyzerModel_InitialStateIsLoading(t *testing.T) {
+func TestAnalyzerModel_InitialState(t *testing.T) {
 	m := NewAnalyzerModel("/tmp", false)
-	if m.state != analyzerLoading {
-		t.Errorf("initial state = %v, want analyzerLoading", m.state)
+	if m.state != analyzerBrowse {
+		t.Errorf("initial state = %v, want analyzerBrowse", m.state)
+	}
+	if !m.loading {
+		t.Error("loading = false, want true immediately after construction")
+	}
+}
+
+// TestAnalyzerModel_KeysWorkWhileLoading is a regression test: entering a
+// directory with many/large children can leave ListDir running for a while.
+// Every key handled in analyzerBrowse - not just 'q' - must keep working the
+// whole time, or the user is stuck unable to even quit.
+func TestAnalyzerModel_KeysWorkWhileLoading(t *testing.T) {
+	dir := t.TempDir()
+	mustTouch(t, filepath.Join(dir, "a.txt"), 10)
+	m := loadedModel(t, dir)
+
+	// Simulate a slow load in flight: start one and don't resolve it.
+	m.loading = true
+	m.pendingPath = "/somewhere/slow"
+	m.loadGen++
+
+	newModel, cmd := m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
+	m = newModel.(AnalyzerModel)
+	if !m.quitting {
+		t.Error("'q' should quit even while a directory load is in flight")
+	}
+	if cmd == nil {
+		t.Error("'q' should return tea.Quit even while loading")
+	}
+}
+
+// TestAnalyzerModel_StaleLoadResultIsDiscarded verifies that navigating away
+// before a load finishes doesn't let the abandoned result clobber the
+// directory the user has since moved to.
+func TestAnalyzerModel_StaleLoadResultIsDiscarded(t *testing.T) {
+	dir := t.TempDir()
+	m := loadedModel(t, dir)
+
+	// A result from a load that's since been superseded (lower gen).
+	staleGen := m.loadGen
+	m.loadGen++ // as if the user navigated on to a new directory
+
+	newModel, _ := m.Update(dirLoadedMsg{path: "/stale/path", entries: nil, gen: staleGen})
+	m = newModel.(AnalyzerModel)
+
+	if m.path == "/stale/path" {
+		t.Error("a stale dirLoadedMsg (old gen) should not overwrite the current path")
 	}
 }
 
@@ -81,8 +127,8 @@ func TestAnalyzerModel_EnterOnDirDrillsIn(t *testing.T) {
 	newModel, cmd := m.Update(tea.KeyMsg{Type: tea.KeyEnter})
 	m = newModel.(AnalyzerModel)
 
-	if m.state != analyzerLoading {
-		t.Errorf("state = %v, want analyzerLoading after entering a directory", m.state)
+	if !m.loading {
+		t.Error("loading = false, want true right after entering a directory")
 	}
 	if cmd == nil {
 		t.Fatal("expected a loadDir command")
@@ -221,13 +267,17 @@ func TestAnalyzerModel_View_DoesNotPanic(t *testing.T) {
 	mustTouch(t, filepath.Join(dir, "a.txt"), 10)
 	m := loadedModel(t, dir)
 
-	for _, state := range []analyzerState{analyzerLoading, analyzerBrowse, analyzerConfirmDelete} {
+	for _, state := range []analyzerState{analyzerBrowse, analyzerConfirmDelete} {
 		m.state = state
 		_ = m.View()
 	}
 
-	m.entries = nil
 	m.state = analyzerBrowse
+	m.loading = true
+	_ = m.View()
+	m.loading = false
+
+	m.entries = nil
 	_ = m.View()
 
 	m.quitting = true
