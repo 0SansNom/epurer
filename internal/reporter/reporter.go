@@ -149,7 +149,7 @@ func (r *Reporter) PrintEstimation(targetsByDomain map[string][]cleaner.CleanTar
 	var rows []rowData
 
 	// Sort domains for consistent output
-	domains := []string{"Frontend", "Backend", "Mobile", "DevOps", "Data/ML", "System"}
+	domains := []string{"Frontend", "Backend", "Mobile", "DevOps", "Data/ML", "AI", "System"}
 
 	for _, domain := range domains {
 		targets, exists := targetsByDomain[domain]
