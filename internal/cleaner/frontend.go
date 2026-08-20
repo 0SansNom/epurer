@@ -138,38 +138,7 @@ func (f *FrontendCleaner) Scan(ctx context.Context, cfg *config.Config) ([]Clean
 }
 
 func (f *FrontendCleaner) Clean(ctx context.Context, targets []CleanTarget, dryRun bool) ([]CleanResult, error) {
-	results := make([]CleanResult, 0, len(targets))
-
-	for _, target := range targets {
-		result := CleanResult{
-			Target:  target,
-			Success: true,
-		}
-
-		if !dryRun {
-			err := utils.SafeRemove(target.Path, false)
-			if err != nil {
-				result.Success = false
-				result.Error = err
-			} else {
-				result.BytesFreed = target.SizeBytes
-			}
-		} else {
-			// In dry-run, just report what would be freed
-			result.BytesFreed = target.SizeBytes
-		}
-
-		results = append(results, result)
-
-		// Check for cancellation
-		select {
-		case <-ctx.Done():
-			return results, ctx.Err()
-		default:
-		}
-	}
-
-	return results, nil
+	return CleanTargets(ctx, targets, dryRun)
 }
 
 // scanNodeModules scans for node_modules directories
