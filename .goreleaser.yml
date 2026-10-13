@@ -1,3 +1,6 @@
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+version: 2
+
 project_name: epurer
 
 # Keep goreleaser out of dist/, which holds Épurer.app and Epurer.dmg.
@@ -23,7 +26,7 @@ builds:
       - -X github.com/0SansNom/epurer/internal/version.Version={{.Version}}
 
 archives:
-  - format: tar.gz
+  - formats: [tar.gz]
     name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
     files:
       - README.md
@@ -38,7 +41,7 @@ checksum:
   name_template: "{{ .ProjectName }}_{{ .Version }}_checksums.txt"
 
 snapshot:
-  name_template: "{{ incpatch .Version }}-next"
+  version_template: "{{ incpatch .Version }}-next"
 
 changelog:
   sort: asc
@@ -53,18 +56,14 @@ changelog:
 brews:
   - name: epurer
     homepage: https://github.com/0SansNom/epurer
-    description: "🧹 Intelligent developer cache cleaner for macOS"
+    description: "Intelligent developer cache cleaner for macOS"
     license: MIT
-
     repository:
       owner: 0SansNom
       name: homebrew-tap
       branch: main
-
-    folder: Formula
-
+    directory: Formula
     install: |
       bin.install "epurer"
-
     test: |
       system "#{bin}/epurer", "--version"

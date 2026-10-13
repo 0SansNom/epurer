@@ -149,14 +149,14 @@ brew install goreleaser          # once
 ./release.sh v2.0.0              # build, test, tag, make dist/Epurer.dmg
 git push origin master --tags
 
-# Prefer gh over a long-lived GITHUB_TOKEN in the shell:
+# Prefer gh over a long-lived personal token in the shell:
 gh auth login                    # or: gh auth refresh -h github.com
 export GITHUB_TOKEN="$(gh auth token)"
 make release                     # goreleaser release --clean
-# → GitHub release + CLI archives + Homebrew tap + Epurer.dmg attached
+# → GitHub release + CLI archives + Homebrew formula + Epurer.dmg attached
 ```
 
-`make release` runs GoReleaser (`.goreleaser.yml`). It needs a token that can write to `0SansNom/epurer` and `0SansNom/homebrew-tap`. Do not commit tokens.
+`make release` runs GoReleaser (`.goreleaser.yml`, `version: 2`). It needs a token that can write to `0SansNom/epurer` and `0SansNom/homebrew-tap`. Do not commit tokens.
 
 ## Contributing
 
