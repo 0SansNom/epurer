@@ -1,0 +1,308 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		F824108532DB44EA99776D5E /* EpurerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 997656E4079540188462CB78 /* EpurerApp.swift */; };
+		2C1D1B66AF8240AA9F4F8028 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4373A694B4A849BFA9D37617 /* ContentView.swift */; };
+		1AAED070EEB8431E88EACD4D /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 775C3AF3FE3B45329B2F918C /* AppModel.swift */; };
+		03948EF42C904973BD024E9F /* EngineClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = A36DB01FB8CC40208D34660C /* EngineClient.swift */; };
+		E465808196C4439D8E711BB1 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD6F736A33D846B6BA2339CA /* Models.swift */; };
+		9F31F142AB5C44EFA8F53B10 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB19C9288C524B2FA08E3D16 /* Theme.swift */; };
+		C34E2BE247D8461FAA44BD1A /* Mascot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 514E9F713A5A4344BBCE6E6F /* Mascot.swift */; };
+		165F69B3AC58435DBB5DE185 /* FlowViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = D885FB940B5A44658C8ED3D6 /* FlowViews.swift */; };
+		88F466CF7C9F48DD8C056FCF /* PreviewPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4FAA31FCC014F1EA65933F5 /* PreviewPanel.swift */; };
+		BBD992D471C845E3A9005FAD /* SecondaryViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44FAC5941D02470BA6B32CA7 /* SecondaryViews.swift */; };
+		782F5DB2D05F47208B4F48B0 /* ProtectedPaths.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EE3A002CD484A87BC6A4FE0 /* ProtectedPaths.swift */; };
+		935E3B8E493D4780BDADA0BD /* ToolScreens.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9A3E882E51548E09679AEC8 /* ToolScreens.swift */; };
+		11B2AEB2D3C90993215D5AFA /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 03F8B39032334D8EEF929384 /* Assets.xcassets */; };
+		5C1A0B2E7D3F4A6B8C9D0E1F /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 6D2B1C3F8E4A5B7C9D0E1F2A /* Localizable.xcstrings */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		3CAB911D245C4DED9CB469FD /* Epurer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Epurer.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		997656E4079540188462CB78 /* EpurerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EpurerApp.swift; sourceTree = "<group>"; };
+		4373A694B4A849BFA9D37617 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		775C3AF3FE3B45329B2F918C /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
+		A36DB01FB8CC40208D34660C /* EngineClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EngineClient.swift; sourceTree = "<group>"; };
+		AD6F736A33D846B6BA2339CA /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+		EB19C9288C524B2FA08E3D16 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
+		514E9F713A5A4344BBCE6E6F /* Mascot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Mascot.swift; sourceTree = "<group>"; };
+		D885FB940B5A44658C8ED3D6 /* FlowViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlowViews.swift; sourceTree = "<group>"; };
+		D4FAA31FCC014F1EA65933F5 /* PreviewPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewPanel.swift; sourceTree = "<group>"; };
+		44FAC5941D02470BA6B32CA7 /* SecondaryViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecondaryViews.swift; sourceTree = "<group>"; };
+		8EE3A002CD484A87BC6A4FE0 /* ProtectedPaths.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProtectedPaths.swift; sourceTree = "<group>"; };
+		F9A3E882E51548E09679AEC8 /* ToolScreens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolScreens.swift; sourceTree = "<group>"; };
+		03F8B39032334D8EEF929384 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		6D2B1C3F8E4A5B7C9D0E1F2A /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		D07B2690FDBF46E19F05B96E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		BE21A2C9281F4F0FA14E76F5 = {
+			isa = PBXGroup;
+			children = (
+				864BBAB06D8B453DB9086C25 /* Sources */,
+				03F8B39032334D8EEF929384 /* Assets.xcassets */,
+				6D2B1C3F8E4A5B7C9D0E1F2A /* Localizable.xcstrings */,
+				FAB0844837854CC3A3454329 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		864BBAB06D8B453DB9086C25 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				997656E4079540188462CB78 /* EpurerApp.swift */,
+				4373A694B4A849BFA9D37617 /* ContentView.swift */,
+				775C3AF3FE3B45329B2F918C /* AppModel.swift */,
+				A36DB01FB8CC40208D34660C /* EngineClient.swift */,
+				AD6F736A33D846B6BA2339CA /* Models.swift */,
+				EB19C9288C524B2FA08E3D16 /* Theme.swift */,
+				514E9F713A5A4344BBCE6E6F /* Mascot.swift */,
+				D885FB940B5A44658C8ED3D6 /* FlowViews.swift */,
+				D4FAA31FCC014F1EA65933F5 /* PreviewPanel.swift */,
+				44FAC5941D02470BA6B32CA7 /* SecondaryViews.swift */,
+				8EE3A002CD484A87BC6A4FE0 /* ProtectedPaths.swift */,
+				F9A3E882E51548E09679AEC8 /* ToolScreens.swift */,
+			);
+			name = Sources;
+			path = ../Epurer/Sources/Epurer;
+			sourceTree = "<group>";
+		};
+		FAB0844837854CC3A3454329 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				3CAB911D245C4DED9CB469FD /* Epurer.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		84B7EB9073324CC39DC04E3D /* Epurer */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 1987F2F95289431C80F0340D /* Build configuration list for PBXNativeTarget "Epurer" */;
+			buildPhases = (
+				90BC0A7578CD4312BA90ABCB /* Embed Engine */,
+				F932F27354154B6A97A12A23 /* Sources */,
+				D07B2690FDBF46E19F05B96E /* Frameworks */,
+				5D79FDF6E3984E88BD3CB5E7 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Epurer;
+			productName = Epurer;
+			productReference = 3CAB911D245C4DED9CB469FD /* Epurer.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		CB7ED2ABD2404896B160BD88 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1600;
+				LastUpgradeCheck = 1600;
+			};
+			buildConfigurationList = 7539899BBC49435499862D13 /* Build configuration list for PBXProject "Epurer" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				fr,
+				Base,
+			);
+			mainGroup = BE21A2C9281F4F0FA14E76F5;
+			productRefGroup = FAB0844837854CC3A3454329 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				84B7EB9073324CC39DC04E3D /* Epurer */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		5D79FDF6E3984E88BD3CB5E7 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				11B2AEB2D3C90993215D5AFA /* Assets.xcassets in Resources */,
+				5C1A0B2E7D3F4A6B8C9D0E1F /* Localizable.xcstrings in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		90BC0A7578CD4312BA90ABCB /* Embed Engine */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Embed Engine";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/epurer-engine",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/bash;
+			shellScript = "# Build Go engine and copy into app Resources (APFS case-safe name).\nset -euo pipefail\nREPO_ROOT=\"${SRCROOT}/../..\"\ncd \"${REPO_ROOT}\"\nmake app-engine\nmkdir -p \"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}\"\ncp \"${REPO_ROOT}/app/Epurer/.engine/epurer\" \"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/epurer-engine\"\nchmod +x \"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/epurer-engine\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		F932F27354154B6A97A12A23 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F824108532DB44EA99776D5E /* EpurerApp.swift in Sources */,
+				2C1D1B66AF8240AA9F4F8028 /* ContentView.swift in Sources */,
+				1AAED070EEB8431E88EACD4D /* AppModel.swift in Sources */,
+				03948EF42C904973BD024E9F /* EngineClient.swift in Sources */,
+				E465808196C4439D8E711BB1 /* Models.swift in Sources */,
+				9F31F142AB5C44EFA8F53B10 /* Theme.swift in Sources */,
+				C34E2BE247D8461FAA44BD1A /* Mascot.swift in Sources */,
+				165F69B3AC58435DBB5DE185 /* FlowViews.swift in Sources */,
+				88F466CF7C9F48DD8C056FCF /* PreviewPanel.swift in Sources */,
+				BBD992D471C845E3A9005FAD /* SecondaryViews.swift in Sources */,
+				782F5DB2D05F47208B4F48B0 /* ProtectedPaths.swift in Sources */,
+				935E3B8E493D4780BDADA0BD /* ToolScreens.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		4A3C23434CA641E18E9A31C9 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_TESTABILITY = YES;
+				GCC_DYNAMIC_NO_PIC = NO;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		C20EA0C6282941488161925B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+			};
+			name = Release;
+		};
+		B66818723C9F4EF19AB49375 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = ../../packaging/macos/epurer.entitlements;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = ../../packaging/macos/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.0sansnom.epurer;
+				PRODUCT_NAME = Epurer;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		1C7C328010614B94BFCBF901 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = ../../packaging/macos/epurer.entitlements;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = ../../packaging/macos/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.0sansnom.epurer;
+				PRODUCT_NAME = Epurer;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		7539899BBC49435499862D13 /* Build configuration list for PBXProject "Epurer" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4A3C23434CA641E18E9A31C9 /* Debug */,
+				C20EA0C6282941488161925B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		1987F2F95289431C80F0340D /* Build configuration list for PBXNativeTarget "Epurer" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B66818723C9F4EF19AB49375 /* Debug */,
+				1C7C328010614B94BFCBF901 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = CB7ED2ABD2404896B160BD88 /* Project object */;
+}

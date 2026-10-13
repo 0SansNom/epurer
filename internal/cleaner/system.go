@@ -8,272 +8,126 @@ import (
 	"path/filepath"
 
 	"github.com/0SansNom/epurer/internal/config"
-	"github.com/0SansNom/epurer/internal/ignorelist"
+	"github.com/0SansNom/epurer/internal/scantask"
 	"github.com/0SansNom/epurer/pkg/utils"
 )
 
-// SystemCleaner handles system-level cleanup operations
-type SystemCleaner struct {
-	cleanerType string
-	ignoreList  *ignorelist.List
+// systemCleaner is the shared shell of a system-family cleaner: a name,
+// the system domain, a detect that always applies, and a file delete.
+// A family overrides Detect or Clean only when its behavior differs.
+type systemCleaner struct {
+	fsCleaner
+	name string
 }
 
-// SetIgnoreList makes this cleaner respect a persistent ignore list.
-func (s *SystemCleaner) SetIgnoreList(l *ignorelist.List) {
-	s.ignoreList = l
+func (s systemCleaner) Name() string        { return s.name }
+func (systemCleaner) Domain() config.Domain { return config.DomainSystem }
+func (systemCleaner) Detect(context.Context) (bool, error) {
+	return true, nil
 }
 
-// System cleaner types
-const (
-	TypeTrash      = "trash"
-	TypeCache      = "cache"
-	TypeLogs       = "logs"
-	TypeTemp       = "temp"
-	TypeDNS        = "dns"
-	TypeHomebrew   = "homebrew"
-	TypeXcode      = "xcode"
-	TypeLaunchpad  = "launchpad"
-	TypeIOSBackups = "ios_backups"
-)
+func (s *systemCleaner) Clean(ctx context.Context, targets []CleanTarget, dryRun bool) ([]CleanResult, error) {
+	return CleanTargets(ctx, targets, dryRun, s.progress)
+}
 
-// Factory functions for each system cleaner type
+// fixed keeps a target that did not come from a walk, unless the ignore list covers it.
+func (s *systemCleaner) fixed(target CleanTarget) []CleanTarget {
+	return filterIgnored([]CleanTarget{target}, s.ignore)
+}
 
 func NewTrashCleaner() Cleaner {
-	return &SystemCleaner{cleanerType: TypeTrash}
+	return &trashCleaner{systemCleaner: systemCleaner{name: "Trash"}}
 }
 
 func NewCacheCleaner() Cleaner {
-	return &SystemCleaner{cleanerType: TypeCache}
+	return &cacheCleaner{systemCleaner: systemCleaner{name: "System Caches"}}
 }
 
 func NewLogCleaner() Cleaner {
-	return &SystemCleaner{cleanerType: TypeLogs}
+	return &logCleaner{systemCleaner: systemCleaner{name: "System Logs"}}
 }
 
 func NewTempFilesCleaner() Cleaner {
-	return &SystemCleaner{cleanerType: TypeTemp}
+	return &tempCleaner{systemCleaner: systemCleaner{name: "Temp Files"}}
 }
 
 func NewDNSCacheCleaner() Cleaner {
-	return &SystemCleaner{cleanerType: TypeDNS}
+	return &dnsCleaner{systemCleaner: systemCleaner{name: "DNS Cache"}}
 }
 
 func NewHomebrewCleaner() Cleaner {
-	return &SystemCleaner{cleanerType: TypeHomebrew}
+	return &homebrewCleaner{systemCleaner: systemCleaner{name: "Homebrew Cache"}}
 }
 
 func NewXcodeCleaner() Cleaner {
-	return &SystemCleaner{cleanerType: TypeXcode}
+	return &xcodeCleaner{systemCleaner: systemCleaner{name: "Xcode DerivedData"}}
 }
 
 func NewLaunchpadCleaner() Cleaner {
-	return &SystemCleaner{cleanerType: TypeLaunchpad}
+	return &launchpadCleaner{systemCleaner: systemCleaner{name: "Launchpad Database"}}
 }
 
 func NewIOSBackupCleaner() Cleaner {
-	return &SystemCleaner{cleanerType: TypeIOSBackups}
+	return &iosBackupCleaner{systemCleaner: systemCleaner{name: "iOS Backups"}}
 }
 
-// Implement Cleaner interface
+type trashCleaner struct{ systemCleaner }
 
-func (s *SystemCleaner) Name() string {
-	switch s.cleanerType {
-	case TypeTrash:
-		return "Trash"
-	case TypeCache:
-		return "System Caches"
-	case TypeLogs:
-		return "System Logs"
-	case TypeTemp:
-		return "Temp Files"
-	case TypeDNS:
-		return "DNS Cache"
-	case TypeHomebrew:
-		return "Homebrew Cache"
-	case TypeXcode:
-		return "Xcode DerivedData"
-	case TypeLaunchpad:
-		return "Launchpad Database"
-	case TypeIOSBackups:
-		return "iOS Backups"
-	default:
-		return "Unknown"
-	}
-}
-
-func (s *SystemCleaner) Domain() config.Domain {
-	return config.DomainSystem
-}
-
-func (s *SystemCleaner) Detect(ctx context.Context) (bool, error) {
-	switch s.cleanerType {
-	case TypeHomebrew:
-		// Only applicable if Homebrew is installed
-		return utils.CommandExists("brew"), nil
-	case TypeXcode:
-		// Only applicable if Xcode is installed
-		return utils.PathExists("/Applications/Xcode.app"), nil
-	case TypeDNS, TypeTrash, TypeCache, TypeLogs, TypeTemp, TypeLaunchpad, TypeIOSBackups:
-		// Always applicable on macOS
-		return true, nil
-	default:
-		return false, fmt.Errorf("unknown cleaner type: %s", s.cleanerType)
-	}
-}
-
-func (s *SystemCleaner) Scan(ctx context.Context, cfg *config.Config) ([]CleanTarget, error) {
-	var targets []CleanTarget
-	var err error
-
-	switch s.cleanerType {
-	case TypeTrash:
-		targets, err = s.scanTrash()
-	case TypeCache:
-		targets, err = s.scanCaches(cfg)
-	case TypeLogs:
-		targets, err = s.scanLogs(cfg)
-	case TypeTemp:
-		targets, err = s.scanTemp()
-	case TypeDNS:
-		targets, err = s.scanDNS()
-	case TypeHomebrew:
-		targets, err = s.scanHomebrew()
-	case TypeXcode:
-		targets, err = s.scanXcode()
-	case TypeLaunchpad:
-		targets, err = s.scanLaunchpad()
-	case TypeIOSBackups:
-		targets, err = s.scanIOSBackups(cfg)
-	default:
-		return nil, fmt.Errorf("unknown cleaner type: %s", s.cleanerType)
-	}
-
-	if err != nil {
-		return nil, err
-	}
-
-	return filterIgnored(targets, s.ignoreList), nil
-}
-
-func (s *SystemCleaner) Clean(ctx context.Context, targets []CleanTarget, dryRun bool) ([]CleanResult, error) {
-	results := make([]CleanResult, 0, len(targets))
-
-	for _, target := range targets {
-		select {
-		case <-ctx.Done():
-			return results, ctx.Err()
-		default:
-		}
-
-		var result CleanResult
-		result.Target = target
-
-		// Special handling for DNS cache (uses command)
-		if s.cleanerType == TypeDNS {
-			err := s.cleanDNSCache(ctx, dryRun)
-			result.Success = err == nil
-			result.Error = err
-			result.BytesFreed = 0 // DNS cache doesn't have measurable size
-		} else if s.cleanerType == TypeHomebrew {
-			// Homebrew uses its own cleanup command
-			err := s.cleanHomebrew(ctx, dryRun)
-			result.Success = err == nil
-			result.Error = err
-			result.BytesFreed = target.SizeBytes // Estimate
-		} else {
-			// Standard file/directory removal
-			err := utils.SafeRemove(target.Path, dryRun)
-			result.Success = err == nil
-			result.Error = err
-			if result.Success {
-				result.BytesFreed = target.SizeBytes
-			}
-		}
-
-		results = append(results, result)
-	}
-
-	return results, nil
-}
-
-// Private scan methods
-
-func (s *SystemCleaner) scanTrash() ([]CleanTarget, error) {
-	targets := []CleanTarget{}
+func (c *trashCleaner) Scan(ctx context.Context, cfg *config.Config) ([]CleanTarget, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return nil, err
 	}
 
-	// User trash
-	trashPath := filepath.Join(home, ".Trash")
-	if utils.PathExists(trashPath) {
-		size, _ := utils.GetDirSize(trashPath)
-		if size > 0 {
-			targets = append(targets, CleanTarget{
-				Path:        trashPath,
-				Description: "User trash",
-				SizeBytes:   size,
-				Safety:      config.Safe,
-			})
-		}
-	}
+	walks := []scantask.Walk{{
+		Root:        filepath.Join(home, ".Trash"),
+		Description: "User trash",
+		Safety:      config.Safe,
+	}}
 
-	// External volumes trash
-	volumesPattern := "/Volumes/*/.Trashes"
-	matches, err := filepath.Glob(volumesPattern)
+	matches, err := filepath.Glob("/Volumes/*/.Trashes")
 	if err == nil {
 		for _, match := range matches {
-			if utils.PathExists(match) {
-				size, _ := utils.GetDirSize(match)
-				if size > 0 {
-					targets = append(targets, CleanTarget{
-						Path:        match,
-						Description: fmt.Sprintf("External volume trash: %s", filepath.Dir(match)),
-						SizeBytes:   size,
-						Safety:      config.Safe,
-					})
-				}
-			}
-		}
-	}
-
-	return targets, nil
-}
-
-func (s *SystemCleaner) scanCaches(cfg *config.Config) ([]CleanTarget, error) {
-	targets := []CleanTarget{}
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return nil, err
-	}
-
-	// User caches (always safe)
-	userCachePath := filepath.Join(home, "Library", "Caches")
-	if utils.PathExists(userCachePath) {
-		size, _ := utils.GetDirSize(userCachePath)
-		if size > 0 {
-			targets = append(targets, CleanTarget{
-				Path:        userCachePath,
-				Description: "User caches",
-				SizeBytes:   size,
+			walks = append(walks, scantask.Walk{
+				Root:        match,
+				Description: fmt.Sprintf("External volume trash: %s", filepath.Dir(match)),
 				Safety:      config.Safe,
 			})
 		}
 	}
 
-	// System caches (moderate - requires sudo)
+	return c.collect(ctx, walks...)
+}
+
+type cacheCleaner struct{ systemCleaner }
+
+func (c *cacheCleaner) Scan(ctx context.Context, cfg *config.Config) ([]CleanTarget, error) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return nil, err
+	}
+
+	targets, err := c.collect(ctx, scantask.Walk{
+		Root:        filepath.Join(home, "Library", "Caches"),
+		Description: "User caches",
+		Safety:      config.Safe,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// System caches stay one target: cleaning them needs a higher safety level.
 	if cfg.CleanLevel.AllowsSafety(config.Moderate) {
 		systemCachePath := "/Library/Caches"
 		if utils.PathExists(systemCachePath) {
 			size, _ := utils.GetDirSize(systemCachePath)
 			if size > 0 {
-				targets = append(targets, CleanTarget{
+				targets = append(targets, c.fixed(CleanTarget{
 					Path:        systemCachePath,
 					Description: "System caches",
 					SizeBytes:   size,
 					Safety:      config.Moderate,
-				})
+				})...)
 			}
 		}
 	}
@@ -281,15 +135,28 @@ func (s *SystemCleaner) scanCaches(cfg *config.Config) ([]CleanTarget, error) {
 	return targets, nil
 }
 
-func (s *SystemCleaner) scanLogs(cfg *config.Config) ([]CleanTarget, error) {
-	targets := []CleanTarget{}
+type logCleaner struct{ systemCleaner }
 
-	// Only scan logs if moderate or higher
+func (c *logCleaner) Scan(ctx context.Context, cfg *config.Config) ([]CleanTarget, error) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return nil, err
+	}
+
+	targets, err := c.collect(ctx, scantask.Walk{
+		Root:        filepath.Join(home, "Library", "Logs"),
+		Description: "User logs",
+		Safety:      config.Safe,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// System logs stay grouped: cleaning them needs a higher safety level.
 	if !cfg.CleanLevel.AllowsSafety(config.Moderate) {
 		return targets, nil
 	}
 
-	// ASL logs
 	aslPattern := "/private/var/log/asl/*.asl"
 	matches, err := filepath.Glob(aslPattern)
 	if err == nil && len(matches) > 0 {
@@ -300,16 +167,15 @@ func (s *SystemCleaner) scanLogs(cfg *config.Config) ([]CleanTarget, error) {
 			}
 		}
 		if totalSize > 0 {
-			targets = append(targets, CleanTarget{
+			targets = append(targets, c.fixed(CleanTarget{
 				Path:        "/private/var/log/asl",
 				Description: "ASL log files",
 				SizeBytes:   totalSize,
 				Safety:      config.Moderate,
-			})
+			})...)
 		}
 	}
 
-	// System logs
 	logPattern := "/private/var/log/*.log"
 	matches, err = filepath.Glob(logPattern)
 	if err == nil && len(matches) > 0 {
@@ -320,122 +186,186 @@ func (s *SystemCleaner) scanLogs(cfg *config.Config) ([]CleanTarget, error) {
 			}
 		}
 		if totalSize > 0 {
-			targets = append(targets, CleanTarget{
+			targets = append(targets, c.fixed(CleanTarget{
 				Path:        "/private/var/log",
 				Description: "System log files",
 				SizeBytes:   totalSize,
 				Safety:      config.Moderate,
-			})
+			})...)
 		}
 	}
 
 	return targets, nil
 }
 
-func (s *SystemCleaner) scanTemp() ([]CleanTarget, error) {
-	targets := []CleanTarget{}
+type tempCleaner struct{ systemCleaner }
 
-	tempPaths := []string{
-		"/private/var/tmp",
-		"/private/tmp",
-	}
-
-	for _, path := range tempPaths {
-		if utils.PathExists(path) {
-			size, _ := utils.GetDirSize(path)
-			if size > 0 {
-				targets = append(targets, CleanTarget{
-					Path:        path,
-					Description: fmt.Sprintf("Temporary files in %s", path),
-					SizeBytes:   size,
-					Safety:      config.Safe,
-				})
-			}
-		}
-	}
-
-	return targets, nil
-}
-
-func (s *SystemCleaner) scanDNS() ([]CleanTarget, error) {
-	// DNS cache doesn't have a measurable size, but we report it as cleanable
-	return []CleanTarget{
-		{
-			Path:        "system:dns_cache",
-			Description: "DNS cache (via dscacheutil)",
-			SizeBytes:   0,
+func (c *tempCleaner) Scan(ctx context.Context, cfg *config.Config) ([]CleanTarget, error) {
+	var walks []scantask.Walk
+	for _, path := range []string{"/private/var/tmp", "/private/tmp"} {
+		walks = append(walks, scantask.Walk{
+			Root:        path,
+			Description: fmt.Sprintf("Temporary files in %s", path),
 			Safety:      config.Safe,
-		},
-	}, nil
+		})
+	}
+	return c.collect(ctx, walks...)
 }
 
-func (s *SystemCleaner) scanHomebrew() ([]CleanTarget, error) {
-	// Homebrew cache location
+type dnsCleaner struct{ systemCleaner }
+
+func (c *dnsCleaner) Scan(ctx context.Context, cfg *config.Config) ([]CleanTarget, error) {
+	return c.fixed(CleanTarget{
+		Path:        "system:dns_cache",
+		Description: "DNS cache (via dscacheutil)",
+		SizeBytes:   0,
+		Safety:      config.Safe,
+	}), nil
+}
+
+func (c *dnsCleaner) Clean(ctx context.Context, targets []CleanTarget, dryRun bool) ([]CleanResult, error) {
+	results := make([]CleanResult, 0, len(targets))
+	for _, target := range targets {
+		select {
+		case <-ctx.Done():
+			return results, ctx.Err()
+		default:
+		}
+
+		err := flushDNSCache(ctx, dryRun)
+		results = append(results, CleanResult{
+			Target:  target,
+			Success: err == nil,
+			Error:   err,
+		})
+		noteCleanProgress(c.progress, target.Path, len(results), 0)
+	}
+	return results, nil
+}
+
+func flushDNSCache(ctx context.Context, dryRun bool) error {
+	if dryRun {
+		return nil
+	}
+
+	cmd := exec.CommandContext(ctx, "dscacheutil", "-flushcache")
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("failed to flush DNS cache: %w", err)
+	}
+
+	cmd = exec.CommandContext(ctx, "killall", "-HUP", "mDNSResponder")
+	cmd.Run()
+	return nil
+}
+
+type homebrewCleaner struct{ systemCleaner }
+
+func (c *homebrewCleaner) Detect(context.Context) (bool, error) {
+	return utils.CommandExists("brew"), nil
+}
+
+func (c *homebrewCleaner) Scan(ctx context.Context, cfg *config.Config) ([]CleanTarget, error) {
 	cmd := exec.Command("brew", "--cache")
 	output, err := cmd.Output()
 	if err != nil {
 		return nil, err
 	}
 
-	cachePath := string(output)
-	cachePath = filepath.Clean(cachePath[:len(cachePath)-1]) // Remove newline
-
+	cachePath := filepath.Clean(string(output[:len(output)-1]))
 	if utils.PathExists(cachePath) {
 		size, _ := utils.GetDirSize(cachePath)
 		if size > 0 {
-			return []CleanTarget{
-				{
-					Path:        cachePath,
-					Description: "Homebrew cache",
-					SizeBytes:   size,
-					Safety:      config.Safe,
-				},
-			}, nil
+			return c.fixed(CleanTarget{
+				Path:        cachePath,
+				Description: "Homebrew cache",
+				SizeBytes:   size,
+				Safety:      config.Safe,
+			}), nil
 		}
 	}
 
 	return []CleanTarget{}, nil
 }
 
-func (s *SystemCleaner) scanXcode() ([]CleanTarget, error) {
-	targets := []CleanTarget{}
+func (c *homebrewCleaner) Clean(ctx context.Context, targets []CleanTarget, dryRun bool) ([]CleanResult, error) {
+	results := make([]CleanResult, 0, len(targets))
+	for _, target := range targets {
+		select {
+		case <-ctx.Done():
+			return results, ctx.Err()
+		default:
+		}
+
+		err := cleanupHomebrew(ctx, dryRun)
+		result := CleanResult{
+			Target:     target,
+			Success:    err == nil,
+			Error:      err,
+			BytesFreed: target.SizeBytes,
+		}
+		results = append(results, result)
+		var freed int64
+		for _, done := range results {
+			if done.Success {
+				freed += done.BytesFreed
+			}
+		}
+		noteCleanProgress(c.progress, target.Path, len(results), freed)
+	}
+	return results, nil
+}
+
+func cleanupHomebrew(ctx context.Context, dryRun bool) error {
+	if dryRun {
+		return nil
+	}
+
+	cmd := exec.CommandContext(ctx, "brew", "cleanup", "--prune=all")
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("failed to run brew cleanup: %w", err)
+	}
+	return nil
+}
+
+type xcodeCleaner struct{ systemCleaner }
+
+func (c *xcodeCleaner) Detect(context.Context) (bool, error) {
+	return utils.PathExists("/Applications/Xcode.app"), nil
+}
+
+func (c *xcodeCleaner) Scan(ctx context.Context, cfg *config.Config) ([]CleanTarget, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return nil, err
 	}
 
-	// DerivedData
-	derivedDataPath := filepath.Join(home, "Library", "Developer", "Xcode", "DerivedData")
-	if utils.PathExists(derivedDataPath) {
-		size, _ := utils.GetDirSize(derivedDataPath)
-		if size > 0 {
-			targets = append(targets, CleanTarget{
-				Path:        derivedDataPath,
-				Description: "Xcode DerivedData",
-				SizeBytes:   size,
-				Safety:      config.Safe,
-			})
-		}
+	xcode := filepath.Join(home, "Library", "Developer", "Xcode")
+	developer := filepath.Join(home, "Library", "Developer")
+	walks := []scantask.Walk{
+		{Root: filepath.Join(xcode, "DerivedData"), Description: "Xcode DerivedData", Safety: config.Safe},
+		{Root: filepath.Join(xcode, "Archives"), Description: "Xcode Archives", Safety: config.Moderate},
+		{Root: filepath.Join(xcode, "iOS DeviceSupport"), Description: "iOS Device Support", Safety: config.Safe},
+		{Root: filepath.Join(xcode, "watchOS DeviceSupport"), Description: "watchOS Device Support", Safety: config.Safe},
+		{Root: filepath.Join(xcode, "tvOS DeviceSupport"), Description: "tvOS Device Support", Safety: config.Safe},
+		{Root: filepath.Join(xcode, "macOS DeviceSupport"), Description: "macOS Device Support", Safety: config.Safe},
+		{Root: filepath.Join(xcode, "iOS Device Logs"), Description: "iOS Device Logs", Safety: config.Safe},
 	}
 
-	// Archives (optional, only if size is significant)
-	archivesPath := filepath.Join(home, "Library", "Developer", "Xcode", "Archives")
-	if utils.PathExists(archivesPath) {
-		size, _ := utils.GetDirSize(archivesPath)
-		if size > 0 {
-			targets = append(targets, CleanTarget{
-				Path:        archivesPath,
-				Description: "Xcode Archives",
-				SizeBytes:   size,
-				Safety:      config.Moderate,
-			})
-		}
+	// Simulator data is recreated on demand, but wiping a device is not a cache flush.
+	if cfg.CleanLevel.AllowsSafety(config.Moderate) {
+		sim := filepath.Join(developer, "CoreSimulator")
+		walks = append(walks,
+			scantask.Walk{Root: filepath.Join(sim, "Caches"), Description: "iOS Simulator caches", Safety: config.Moderate},
+			scantask.Walk{Root: filepath.Join(sim, "Devices"), Description: "iOS Simulator devices", Safety: config.Moderate},
+		)
 	}
 
-	return targets, nil
+	return c.collect(ctx, walks...)
 }
 
-func (s *SystemCleaner) scanLaunchpad() ([]CleanTarget, error) {
+type launchpadCleaner struct{ systemCleaner }
+
+func (c *launchpadCleaner) Scan(ctx context.Context, cfg *config.Config) ([]CleanTarget, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return nil, err
@@ -443,22 +373,20 @@ func (s *SystemCleaner) scanLaunchpad() ([]CleanTarget, error) {
 
 	dbPath := filepath.Join(home, "Library", "Application Support", "Dock")
 	if utils.PathExists(dbPath) {
-		// Launchpad DB is a special case - we rebuild it, not delete it
-		return []CleanTarget{
-			{
-				Path:        dbPath,
-				Description: "Launchpad database (will be rebuilt)",
-				SizeBytes:   0, // Negligible size
-				Safety:      config.Dangerous,
-			},
-		}, nil
+		return c.fixed(CleanTarget{
+			Path:        dbPath,
+			Description: "Launchpad database (will be rebuilt)",
+			SizeBytes:   0,
+			Safety:      config.Dangerous,
+		}), nil
 	}
 
 	return []CleanTarget{}, nil
 }
 
-func (s *SystemCleaner) scanIOSBackups(cfg *config.Config) ([]CleanTarget, error) {
-	// Only show iOS backups in aggressive mode
+type iosBackupCleaner struct{ systemCleaner }
+
+func (c *iosBackupCleaner) Scan(ctx context.Context, cfg *config.Config) ([]CleanTarget, error) {
 	if !cfg.CleanLevel.AllowsSafety(config.Dangerous) {
 		return []CleanTarget{}, nil
 	}
@@ -468,54 +396,9 @@ func (s *SystemCleaner) scanIOSBackups(cfg *config.Config) ([]CleanTarget, error
 		return nil, err
 	}
 
-	backupPath := filepath.Join(home, "Library", "Application Support", "MobileSync", "Backup")
-	if utils.PathExists(backupPath) {
-		size, _ := utils.GetDirSize(backupPath)
-		if size > 0 {
-			return []CleanTarget{
-				{
-					Path:        backupPath,
-					Description: "iOS device backups (DANGEROUS - may contain important data)",
-					SizeBytes:   size,
-					Safety:      config.Dangerous,
-				},
-			}, nil
-		}
-	}
-
-	return []CleanTarget{}, nil
-}
-
-// Private clean methods
-
-func (s *SystemCleaner) cleanDNSCache(ctx context.Context, dryRun bool) error {
-	if dryRun {
-		return nil
-	}
-
-	// Flush DNS cache
-	cmd := exec.CommandContext(ctx, "dscacheutil", "-flushcache")
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("failed to flush DNS cache: %w", err)
-	}
-
-	// Kill mDNSResponder (requires sudo for full effect)
-	cmd = exec.CommandContext(ctx, "killall", "-HUP", "mDNSResponder")
-	cmd.Run() // Ignore error if we don't have sudo
-
-	return nil
-}
-
-func (s *SystemCleaner) cleanHomebrew(ctx context.Context, dryRun bool) error {
-	if dryRun {
-		return nil
-	}
-
-	// Run brew cleanup
-	cmd := exec.CommandContext(ctx, "brew", "cleanup", "--prune=all")
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("failed to run brew cleanup: %w", err)
-	}
-
-	return nil
+	return c.collect(ctx, scantask.Walk{
+		Root:        filepath.Join(home, "Library", "Application Support", "MobileSync", "Backup"),
+		Description: "iOS device backups (DANGEROUS - may contain important data)",
+		Safety:      config.Dangerous,
+	})
 }

@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2026-10-13
+
+### Added
+
+- **Épurer for macOS**: a native SwiftUI app, downloadable as `Epurer.dmg`
+  (universal: Apple silicon and Intel). Home with disk usage and detected
+  stacks, scan → estimate → review → confirm flow, one-gesture safe clean,
+  Explorer, Projets (build artifacts by project), Chemins protégés, and a
+  guided Full Disk Access screen.
+- Interface in French and English, following the macOS language.
+- `epurer engine …`: JSON protocol (with streamed progress) used by the app.
+- `make dmg` builds the disk image; `make release` attaches it to the
+  GitHub release.
+
+### Removed
+
+- `epurer analyze` and the `epurer ui` terminal interface, replaced by the
+  app's Explorer and screens.
+
 ## [1.2.0] - 2026-08-20
 
 ### Added
@@ -74,5 +93,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ⚡ Written in Go for maximum performance
 - 🔒 Safe by default - only targets rebuildable caches
 
+[2.0.0]: https://github.com/0SansNom/epurer/releases/tag/v2.0.0
 [1.2.0]: https://github.com/0SansNom/epurer/releases/tag/v1.2.0
 [1.0.0]: https://github.com/0SansNom/epurer/releases/tag/v1.0.0

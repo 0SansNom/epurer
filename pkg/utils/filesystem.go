@@ -7,6 +7,9 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"syscall"
+
+	"golang.org/x/sys/unix"
 )
 
 // ErrIncompleteSize is wrapped into GetDirSize's returned error when one or
@@ -68,22 +71,35 @@ var protectedPaths = map[string]bool{
 }
 
 // isProtectedPath reports whether path is empty, a known system root, or
-// the user's home directory itself.
+// the user's home directory itself. Symlink targets are resolved when they
+// exist so a link into a protected root cannot bypass the check.
 func isProtectedPath(path string) bool {
 	if path == "" {
 		return true
 	}
+	return isProtectedCleanPath(filepath.Clean(path)) || isProtectedCleanPath(resolveExisting(path))
+}
 
-	clean := filepath.Clean(path)
+func isProtectedCleanPath(clean string) bool {
 	if protectedPaths[clean] {
 		return true
 	}
-
 	if home, err := os.UserHomeDir(); err == nil && clean == filepath.Clean(home) {
 		return true
 	}
-
 	return false
+}
+
+// resolveExisting returns the symlink-resolved path when it exists.
+// Missing paths keep their cleaned form so CanRemove can still reason
+// about the parent directory.
+func resolveExisting(path string) string {
+	clean := filepath.Clean(path)
+	resolved, err := filepath.EvalSymlinks(clean)
+	if err != nil {
+		return clean
+	}
+	return resolved
 }
 
 // PathExists checks if a path exists on the filesystem
@@ -114,12 +130,67 @@ func ExpandHome(path string) (string, error) {
 	return path, nil
 }
 
-// SafeRemove removes a path, respecting the dryRun flag. It refuses to
-// touch a protected path (see isProtectedPath) even in non-dry-run mode,
-// as a backstop against upstream bugs producing a dangerous target.
+// ErrNotRemovable means this user cannot unlink the path. epurer does not
+// ask for an admin password to get around that.
+var ErrNotRemovable = errors.New("not removable by this user; epurer does not ask for an admin password")
+
+// IsPseudoPath reports command-style targets that are not filesystem paths
+// (DNS flush, Docker prune, …). They must never reach os.RemoveAll.
+func IsPseudoPath(path string) bool {
+	return strings.HasPrefix(path, "system:") || strings.HasPrefix(path, "docker:")
+}
+
+// CanRemove reports whether this process can unlink path.
+// Known pseudo-targets (system:…, docker:…) are left to their own cleaner.
+// Other non-absolute paths are refused so a relative RemoveAll cannot
+// follow the process CWD. A missing absolute path is removable when its
+// parent is writable. On a sticky parent, only a file owned by this user
+// is removable.
+func CanRemove(path string) bool {
+	if path == "" || isProtectedPath(path) {
+		return false
+	}
+	if IsPseudoPath(path) {
+		return true
+	}
+	if !filepath.IsAbs(path) {
+		return false
+	}
+
+	// Unlink permission is about the directory that holds the name, not the
+	// symlink target. isProtectedPath already refused resolved protected roots.
+	clean := filepath.Clean(path)
+	parent := filepath.Dir(clean)
+	if unix.Access(parent, unix.W_OK) != nil {
+		return false
+	}
+
+	info, err := os.Lstat(clean)
+	if err != nil {
+		return os.IsNotExist(err)
+	}
+	parentInfo, err := os.Lstat(parent)
+	if err != nil || parentInfo.Mode()&os.ModeSticky == 0 {
+		return err == nil
+	}
+	stat, ok := info.Sys().(*syscall.Stat_t)
+	if !ok {
+		return true
+	}
+	return int(stat.Uid) == os.Getuid()
+}
+
+// SafeRemove removes a path, respecting the dryRun flag. It refuses
+// protected roots, pseudo-targets, and anything CanRemove rejects.
 func SafeRemove(path string, dryRun bool) error {
 	if isProtectedPath(path) {
 		return fmt.Errorf("refusing to remove protected path: %q", path)
+	}
+	if IsPseudoPath(path) {
+		return fmt.Errorf("refusing to remove command target as a file path: %q", path)
+	}
+	if !CanRemove(path) {
+		return ErrNotRemovable
 	}
 
 	if dryRun {

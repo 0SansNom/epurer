@@ -8,12 +8,14 @@ import (
 	"github.com/0SansNom/epurer/internal/config"
 	"github.com/0SansNom/epurer/internal/ignorelist"
 	"github.com/0SansNom/epurer/internal/scanner"
+	"github.com/0SansNom/epurer/internal/scantask"
 	"github.com/0SansNom/epurer/pkg/utils"
 )
 
 // FrontendCleaner handles frontend development cleanup (Node.js, npm, yarn, pnpm, etc.)
 type FrontendCleaner struct {
 	scanner *scanner.Scanner
+	fsCleaner
 }
 
 // NewFrontendCleaner creates a new FrontendCleaner
@@ -30,6 +32,7 @@ func NewFrontendCleaner() (Cleaner, error) {
 
 // SetIgnoreList makes this cleaner respect a persistent ignore list.
 func (f *FrontendCleaner) SetIgnoreList(l *ignorelist.List) {
+	f.fsCleaner.SetIgnoreList(l)
 	f.scanner.SetIgnoreList(l)
 }
 
@@ -56,57 +59,16 @@ func (f *FrontendCleaner) Scan(ctx context.Context, cfg *config.Config) ([]Clean
 		return nil, err
 	}
 
-	npmCachePath := filepath.Join(home, ".npm")
-	if utils.PathExists(npmCachePath) {
-		size, _ := utils.GetDirSize(npmCachePath)
-		if size > 0 {
-			targets = append(targets, CleanTarget{
-				Path:        npmCachePath,
-				Description: "npm cache",
-				SizeBytes:   size,
-				Safety:      config.Safe,
-			})
-		}
+	// The Yarn cache under ~/Library/Caches is already a user-cache entry.
+	found, err := f.collect(ctx,
+		scantask.Walk{Root: filepath.Join(home, ".npm"), Description: "npm cache", Safety: config.Safe},
+		scantask.Walk{Root: filepath.Join(home, ".cache", "yarn"), Description: "Yarn cache", Safety: config.Safe},
+		scantask.Walk{Root: filepath.Join(home, ".pnpm-store"), Description: "pnpm store", Safety: config.Safe},
+	)
+	if err != nil {
+		return nil, err
 	}
-
-	yarnCachePath := filepath.Join(home, ".cache", "yarn")
-	if utils.PathExists(yarnCachePath) {
-		size, _ := utils.GetDirSize(yarnCachePath)
-		if size > 0 {
-			targets = append(targets, CleanTarget{
-				Path:        yarnCachePath,
-				Description: "Yarn cache",
-				SizeBytes:   size,
-				Safety:      config.Safe,
-			})
-		}
-	}
-
-	yarnGlobalCache := filepath.Join(home, "Library", "Caches", "Yarn")
-	if utils.PathExists(yarnGlobalCache) {
-		size, _ := utils.GetDirSize(yarnGlobalCache)
-		if size > 0 {
-			targets = append(targets, CleanTarget{
-				Path:        yarnGlobalCache,
-				Description: "Yarn global cache",
-				SizeBytes:   size,
-				Safety:      config.Safe,
-			})
-		}
-	}
-
-	pnpmStorePath := filepath.Join(home, ".pnpm-store")
-	if utils.PathExists(pnpmStorePath) {
-		size, _ := utils.GetDirSize(pnpmStorePath)
-		if size > 0 {
-			targets = append(targets, CleanTarget{
-				Path:        pnpmStorePath,
-				Description: "pnpm store",
-				SizeBytes:   size,
-				Safety:      config.Safe,
-			})
-		}
-	}
+	targets = append(targets, found...)
 
 	if cfg.CleanLevel.AllowsSafety(config.Moderate) {
 		nodeModulesTargets := f.scanNodeModules(ctx)
@@ -138,7 +100,7 @@ func (f *FrontendCleaner) Scan(ctx context.Context, cfg *config.Config) ([]Clean
 }
 
 func (f *FrontendCleaner) Clean(ctx context.Context, targets []CleanTarget, dryRun bool) ([]CleanResult, error) {
-	return CleanTargets(ctx, targets, dryRun)
+	return CleanTargets(ctx, targets, dryRun, f.progress)
 }
 
 // scanNodeModules scans for node_modules directories
@@ -223,19 +185,19 @@ func (f *FrontendCleaner) scanNestedCache(ctx context.Context, subPath string) [
 // getDescriptionForPattern returns a human-readable description for a pattern
 func (f *FrontendCleaner) getDescriptionForPattern(pattern string) string {
 	descriptions := map[string]string{
-		"dist":              "Build output (dist)",
-		"build":             "Build output (build)",
-		"out":               "Build output (out)",
-		".next":             "Next.js build cache",
-		".vite":             "Vite cache",
-		".parcel-cache":     "Parcel cache",
-		"coverage":          "Test coverage reports",
-		".nyc_output":       "NYC coverage output",
-		".eslintcache":      "ESLint cache",
-		"storybook-static":  "Storybook static build",
-		"npm-debug.log*":    "npm debug logs",
-		"yarn-error.log*":   "Yarn error logs",
-		"yarn-debug.log*":   "Yarn debug logs",
+		"dist":             "Build output (dist)",
+		"build":            "Build output (build)",
+		"out":              "Build output (out)",
+		".next":            "Next.js build cache",
+		".vite":            "Vite cache",
+		".parcel-cache":    "Parcel cache",
+		"coverage":         "Test coverage reports",
+		".nyc_output":      "NYC coverage output",
+		".eslintcache":     "ESLint cache",
+		"storybook-static": "Storybook static build",
+		"npm-debug.log*":   "npm debug logs",
+		"yarn-error.log*":  "Yarn error logs",
+		"yarn-debug.log*":  "Yarn debug logs",
 	}
 
 	if desc, ok := descriptions[pattern]; ok {

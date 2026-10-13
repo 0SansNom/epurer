@@ -129,10 +129,19 @@ func detectProjectType(root string) string {
 // the results by project. Artifacts whose ModTime is older than minAge are
 // preselected.
 func Scan(ctx context.Context, s *scanner.Scanner, minAge time.Duration) ([]Project, error) {
+	return ScanFunc(ctx, s, minAge, nil, nil)
+}
+
+// ScanFunc is Scan that also reports progress: onFound for each artifact
+// kept (with its project's type), onPattern after each pattern is searched.
+// Either callback may be nil.
+func ScanFunc(ctx context.Context, s *scanner.Scanner, minAge time.Duration,
+	onFound func(a Artifact, projectType string), onPattern func(done, total int)) ([]Project, error) {
 	projects := make(map[string]*Project)
 	cutoff := time.Now().Add(-minAge)
 
-	for _, spec := range specs() {
+	all := specs()
+	for i, spec := range all {
 		results := s.FindByPattern(ctx, spec.pattern)
 		for r := range results {
 			if r.Err != nil {
@@ -180,6 +189,12 @@ func Scan(ctx context.Context, s *scanner.Scanner, minAge time.Duration) ([]Proj
 
 			p.Artifacts = append(p.Artifacts, artifact)
 			p.TotalSize += artifact.SizeBytes
+			if onFound != nil {
+				onFound(artifact, p.Type)
+			}
+		}
+		if onPattern != nil {
+			onPattern(i+1, len(all))
 		}
 
 		select {

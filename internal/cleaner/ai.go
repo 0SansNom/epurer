@@ -6,19 +6,14 @@ import (
 	"path/filepath"
 
 	"github.com/0SansNom/epurer/internal/config"
-	"github.com/0SansNom/epurer/internal/ignorelist"
+	"github.com/0SansNom/epurer/internal/scantask"
 	"github.com/0SansNom/epurer/pkg/utils"
 )
 
 // AICleaner handles cache and artifact cleanup for AI coding tools
 // (Claude desktop, Cursor, GitHub Copilot, Continue.dev, ChatGPT desktop).
 type AICleaner struct {
-	ignoreList *ignorelist.List
-}
-
-// SetIgnoreList makes this cleaner respect a persistent ignore list.
-func (a *AICleaner) SetIgnoreList(l *ignorelist.List) {
-	a.ignoreList = l
+	fsCleaner
 }
 
 // NewAICleaner creates a new AICleaner
@@ -59,11 +54,6 @@ type aiCachePath struct {
 func (a *AICleaner) candidatePaths(home string) []aiCachePath {
 	return []aiCachePath{
 		{
-			path:        filepath.Join(home, "Library", "Caches", "Claude"),
-			description: "Claude desktop cache",
-			safety:      config.Safe,
-		},
-		{
 			path:        filepath.Join(home, "Library", "Application Support", "Claude", "Cache"),
 			description: "Claude desktop application cache",
 			safety:      config.Safe,
@@ -102,38 +92,26 @@ func (a *AICleaner) candidatePaths(home string) []aiCachePath {
 }
 
 func (a *AICleaner) Scan(ctx context.Context, cfg *config.Config) ([]CleanTarget, error) {
-	targets := []CleanTarget{}
-
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return nil, err
 	}
 
+	var walks []scantask.Walk
 	for _, candidate := range a.candidatePaths(home) {
 		if !cfg.CleanLevel.AllowsSafety(candidate.safety) {
 			continue
 		}
-
-		if !utils.PathExists(candidate.path) {
-			continue
-		}
-
-		size, _ := utils.GetDirSize(candidate.path)
-		if size == 0 {
-			continue
-		}
-
-		targets = append(targets, CleanTarget{
-			Path:        candidate.path,
+		walks = append(walks, scantask.Walk{
+			Root:        candidate.path,
 			Description: candidate.description,
-			SizeBytes:   size,
 			Safety:      candidate.safety,
 		})
 	}
 
-	return filterIgnored(targets, a.ignoreList), nil
+	return a.collect(ctx, walks...)
 }
 
 func (a *AICleaner) Clean(ctx context.Context, targets []CleanTarget, dryRun bool) ([]CleanResult, error) {
-	return CleanTargets(ctx, targets, dryRun)
+	return CleanTargets(ctx, targets, dryRun, a.progress)
 }

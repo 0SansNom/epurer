@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Minimal entitlements for a future Épurer.app.
+
+  Security policy (do not weaken without an explicit product decision):
+  - No App Sandbox exemption that implies root.
+  - No SMPrivilegedExecutables / no privileged helper.
+  - No com.apple.security.cs.disable-library-validation unless notarization forces a review.
+  - Full Disk Access is a user TCC grant in System Settings, not an entitlement.
+-->
+<plist version="1.0">
+<dict>
+	<!-- Intentionally empty: user-space only. -->
+</dict>
+</plist>

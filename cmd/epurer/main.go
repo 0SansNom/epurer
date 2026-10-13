@@ -13,7 +13,7 @@ import (
 	"github.com/0SansNom/epurer/internal/detector"
 	"github.com/0SansNom/epurer/internal/ignorelist"
 	"github.com/0SansNom/epurer/internal/reporter"
-	"github.com/0SansNom/epurer/internal/tui"
+	"github.com/0SansNom/epurer/internal/scantask"
 	"github.com/0SansNom/epurer/internal/version"
 )
 
@@ -49,10 +49,9 @@ Xcode, Android, Flutter, TensorFlow, PyTorch, and more.`,
 		newDetectCmd(),
 		newReportCmd(),
 		newSmartCmd(),
-		newTUICmd(),
 		newIgnoreCmd(),
 		newPurgeCmd(),
-		newAnalyzeCmd(),
+		newEngineCmd(),
 	)
 
 	if err := rootCmd.Execute(); err != nil {
@@ -134,28 +133,13 @@ using conservative settings. Perfect for quick, safe cleanup.`,
 	return cmd
 }
 
-// newTUICmd creates the interactive TUI command
-func newTUICmd() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "ui",
-		Short: "Launch interactive TUI mode",
-		Long: `Launch an interactive terminal user interface for selecting and cleaning
-development caches. Navigate with arrow keys, toggle selection with space,
-and confirm with enter.`,
-		RunE: runTUI,
-	}
-
-	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "Show what would be cleaned without actually deleting")
-
-	return cmd
-}
-
 // runClean executes the clean command
 func runClean(cmd *cobra.Command, args []string) error {
 	ctx := context.Background()
 	rep := reporter.NewReporter(verbose)
 
 	rep.PrintHeader()
+	rep.OfferFullDiskAccess(interactive)
 
 	// Parse clean level
 	level, err := config.ParseCleanLevel(cleanLevel)
@@ -185,6 +169,7 @@ func runClean(cmd *cobra.Command, args []string) error {
 
 	// Detect and scan
 	rep.PrintInfo("Scanning system...")
+	watchScanProgress(cleaners, rep)
 
 	targetsByDomain := make(map[string][]cleaner.CleanTarget)
 	detected := make(map[string]bool)
@@ -216,6 +201,8 @@ func runClean(cmd *cobra.Command, args []string) error {
 			targetsByDomain[c.Name()] = targets
 		}
 	}
+	rep.FinishScanProgress()
+	targetsByDomain = keepRemovable(rep, targetsByDomain)
 
 	// Print estimation
 	rep.PrintEstimation(targetsByDomain)
@@ -232,8 +219,27 @@ func runClean(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	// Ask for confirmation if interactive
+	// Ask which lines to keep, then confirm, when the user asked for it.
 	if interactive && !dryRun {
+		rep.PrintSelectableTargets(targetsByDomain)
+		skip, err := rep.ReadSkipList()
+		if err != nil {
+			rep.PrintError(err.Error())
+			return err
+		}
+		targetsByDomain, err = reporter.FilterTargets(targetsByDomain, skip)
+		if err != nil {
+			rep.PrintError(err.Error())
+			return err
+		}
+		totalTargets = 0
+		for _, targets := range targetsByDomain {
+			totalTargets += len(targets)
+		}
+		if totalTargets == 0 {
+			rep.PrintInfo("Nothing to clean!")
+			return nil
+		}
 		if !rep.AskConfirmation(fmt.Sprintf("Proceed with cleaning %d items?", totalTargets)) {
 			rep.PrintInfo("Cancelled")
 			return nil
@@ -304,6 +310,7 @@ func runReport(cmd *cobra.Command, args []string) error {
 	rep := reporter.NewReporter(verbose)
 
 	rep.PrintHeader()
+	rep.OfferFullDiskAccess(false)
 
 	// Parse clean level
 	level, err := config.ParseCleanLevel(cleanLevel)
@@ -332,6 +339,7 @@ func runReport(cmd *cobra.Command, args []string) error {
 	// Scan
 	rep.PrintInfo("Scanning system (this may take a while)...")
 	startTime := time.Now()
+	watchScanProgress(cleaners, rep)
 
 	targetsByDomain := make(map[string][]cleaner.CleanTarget)
 
@@ -355,6 +363,8 @@ func runReport(cmd *cobra.Command, args []string) error {
 	}
 
 	scanDuration := time.Since(startTime)
+	rep.FinishScanProgress()
+	targetsByDomain = keepRemovable(rep, targetsByDomain)
 
 	// Print report
 	rep.PrintEstimation(targetsByDomain)
@@ -379,6 +389,7 @@ func runSmart(cmd *cobra.Command, args []string) error {
 	rep := reporter.NewReporter(verbose)
 
 	rep.PrintHeader()
+	rep.OfferFullDiskAccess(false)
 	rep.PrintInfo("Running smart cleanup with conservative settings...")
 
 	// Use conservative level for smart mode
@@ -438,7 +449,11 @@ func runSmart(cmd *cobra.Command, args []string) error {
 		cleaners = append(cleaners, c)
 	}
 
-	applyIgnoreList(cleaners)
+	if err := applyIgnoreList(cleaners); err != nil {
+		rep.PrintError(err.Error())
+		return err
+	}
+	watchScanProgress(cleaners, rep)
 
 	// Scan and clean
 	targetsByDomain := make(map[string][]cleaner.CleanTarget)
@@ -458,6 +473,8 @@ func runSmart(cmd *cobra.Command, args []string) error {
 			targetsByDomain[c.Name()] = targets
 		}
 	}
+	rep.FinishScanProgress()
+	targetsByDomain = keepRemovable(rep, targetsByDomain)
 
 	// Print estimation
 	rep.PrintEstimation(targetsByDomain)
@@ -486,65 +503,6 @@ func runSmart(cmd *cobra.Command, args []string) error {
 	rep.PrintCleanResults(allResults, dryRun)
 
 	return nil
-}
-
-// runTUI executes the interactive TUI command
-func runTUI(cmd *cobra.Command, args []string) error {
-	ctx := context.Background()
-
-	// Show loading message
-	fmt.Print("\033[?25l") // Hide cursor
-	fmt.Print("🔍 Scanning system for cleanable items...")
-
-	// Use conservative level for TUI mode
-	cfg := config.NewDefaultConfig()
-	cfg.CleanLevel = config.Standard
-	cfg.Verbose = verbose
-
-	// Initialize cleaners
-	cleaners, err := initAllCleaners()
-	if err != nil {
-		fmt.Print("\033[?25h") // Show cursor
-		fmt.Println()
-		return fmt.Errorf("failed to initialize cleaners: %v", err)
-	}
-
-	// Scan all domains with progress indicator
-	targetsByDomain := make(map[string][]cleaner.CleanTarget)
-	spinChars := []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}
-	spinIdx := 0
-
-	for _, c := range cleaners {
-		// Update spinner
-		fmt.Printf("\r%s Scanning %s...   ", spinChars[spinIdx%len(spinChars)], c.Name())
-		spinIdx++
-
-		isDetected, err := c.Detect(ctx)
-		if err != nil || !isDetected {
-			continue
-		}
-
-		targets, err := c.Scan(ctx, cfg)
-		if err != nil {
-			continue
-		}
-
-		if len(targets) > 0 {
-			targetsByDomain[c.Name()] = targets
-		}
-	}
-
-	// Clear loading line and show cursor
-	fmt.Print("\r\033[K")  // Clear line
-	fmt.Print("\033[?25h") // Show cursor
-
-	if len(targetsByDomain) == 0 {
-		fmt.Println("✅ Nothing to clean!")
-		return nil
-	}
-
-	// Launch TUI
-	return tui.Run(targetsByDomain, dryRun)
 }
 
 // Helper functions
@@ -582,24 +540,46 @@ func initAllCleaners() ([]cleaner.Cleaner, error) {
 		cleaners = append(cleaners, c)
 	}
 
-	applyIgnoreList(cleaners)
+	if err := applyIgnoreList(cleaners); err != nil {
+		return nil, err
+	}
 
 	return cleaners, nil
 }
 
 // applyIgnoreList loads the persistent ignore list and applies it to every
-// cleaner that scans the filesystem. Failure to load is non-fatal - cleaners
-// simply run without ignore filtering.
-func applyIgnoreList(cleaners []cleaner.Cleaner) {
+// cleaner that scans the filesystem. A missing file is fine (empty list);
+// corrupt or unreadable ignore data fails closed so we never clean without
+// the user's protections.
+func applyIgnoreList(cleaners []cleaner.Cleaner) error {
 	ignList, err := ignorelist.Load()
 	if err != nil {
-		return
+		return fmt.Errorf("cannot load ignore list: %w", err)
 	}
 
 	for _, c := range cleaners {
 		if ia, ok := c.(cleaner.IgnoreAware); ok {
 			ia.SetIgnoreList(ignList)
 		}
+	}
+	return nil
+}
+
+func keepRemovable(rep *reporter.Reporter, groups map[string][]cleaner.CleanTarget) map[string][]cleaner.CleanTarget {
+	kept, locked := reporter.PartitionRemovable(groups)
+	rep.PrintLocked(locked)
+	return kept
+}
+
+func watchScanProgress(cleaners []cleaner.Cleaner, rep *reporter.Reporter) {
+	for _, c := range cleaners {
+		watcher, ok := c.(cleaner.ProgressAware)
+		if !ok {
+			continue
+		}
+		watcher.SetProgress(func(p scantask.Progress) {
+			rep.PrintScanProgress(p.Path, p.Items, p.Bytes)
+		})
 	}
 }
 
@@ -649,7 +629,7 @@ func matchesDomain(cleanerName, requestedDomain string) bool {
 	domainMapping := map[string][]string{
 		"frontend": {"frontend"},
 		"backend":  {"backend"},
-		"mobile":   {"mobile"},
+		"mobile":   {"mobile", "xcode"},
 		"devops":   {"devops"},
 		"dataml":   {"data/ml", "dataml"},
 		"data/ml":  {"data/ml", "dataml"},

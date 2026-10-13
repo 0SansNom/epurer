@@ -1,15 +1,16 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
-# Épurer- Release Script
+# Épurer release prep: tests, annotated tag, universal DMG.
+# Usage: ./release.sh v2.0.0
+# Then:  git push origin master --tags && make release
 
-echo "🚀 Épurer- Release Script"
+echo "🚀 Épurer release"
 echo ""
 
-# Check if we're on main branch
 CURRENT_BRANCH=$(git branch --show-current)
-if [[ "$CURRENT_BRANCH" != "main" ]]; then
-    echo "⚠️  Warning: Not on main branch (current: $CURRENT_BRANCH)"
+if [[ "$CURRENT_BRANCH" != "master" ]]; then
+    echo "⚠️  Warning: Not on master branch (current: $CURRENT_BRANCH)"
     read -p "Continue anyway? [y/N] " -n 1 -r
     echo
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then
@@ -17,53 +18,64 @@ if [[ "$CURRENT_BRANCH" != "main" ]]; then
     fi
 fi
 
-# Check for uncommitted changes
 if [[ -n $(git status -s) ]]; then
     echo "❌ Error: You have uncommitted changes"
     git status -s
     exit 1
 fi
 
-# Get current version from git tag
 CURRENT_VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
 echo "📦 Current version: $CURRENT_VERSION"
 echo ""
 
-# Ask for new version
-read -p "Enter new version (e.g., v1.0.1): " NEW_VERSION
+NEW_VERSION="${1:-}"
+if [[ -z "$NEW_VERSION" ]]; then
+    read -p "Enter new version (e.g., v1.0.1): " NEW_VERSION
+fi
 
 if [[ ! $NEW_VERSION =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
     echo "❌ Error: Invalid version format (must be vX.Y.Z)"
     exit 1
 fi
 
+if git rev-parse "$NEW_VERSION" >/dev/null 2>&1; then
+    echo "❌ Error: Tag $NEW_VERSION already exists"
+    exit 1
+fi
+
 echo ""
-echo "📝 Creating release $NEW_VERSION..."
+echo "📝 Preparing release $NEW_VERSION..."
 echo ""
 
-# Update CHANGELOG.md
-DATE=$(date +%Y-%m-%d)
-echo "Updating CHANGELOG.md..."
+if ! grep -q "^## \[${NEW_VERSION#v}\]" CHANGELOG.md; then
+    echo "❌ Error: CHANGELOG.md has no entry for ${NEW_VERSION#v}"
+    exit 1
+fi
+if grep -q "^## \[${NEW_VERSION#v}\] - Unreleased" CHANGELOG.md; then
+    echo "❌ Error: CHANGELOG.md still says Unreleased for ${NEW_VERSION#v} — set today's date first"
+    exit 1
+fi
 
-# Build
 echo "🔨 Building binary..."
 make clean
 make build
 
-# Test
 echo "🧪 Running tests..."
 make test
 
-# Create git tag
 echo "🏷️  Creating git tag $NEW_VERSION..."
 git tag -a "$NEW_VERSION" -m "Release $NEW_VERSION"
+
+echo "💿 Building dist/Epurer.dmg..."
+make dmg
 
 echo ""
 echo "✅ Release $NEW_VERSION prepared!"
 echo ""
 echo "Next steps:"
-echo "  1. Review changes: git show $NEW_VERSION"
-echo "  2. Push to GitHub: git push origin main --tags"
-echo "  3. Create GitHub release at: https://github.com/0SansNom/epurer/releases/new"
-echo "  4. Run goreleaser: goreleaser release --clean"
+echo "  1. Review: git show $NEW_VERSION"
+echo "  2. Push:   git push origin master --tags"
+echo "  3. Publish (uses GitHub auth from gh):"
+echo "       export GITHUB_TOKEN=\"\$(gh auth token)\""
+echo "       make release"
 echo ""

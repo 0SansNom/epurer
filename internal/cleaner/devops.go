@@ -10,12 +10,14 @@ import (
 	"github.com/0SansNom/epurer/internal/config"
 	"github.com/0SansNom/epurer/internal/ignorelist"
 	"github.com/0SansNom/epurer/internal/scanner"
+	"github.com/0SansNom/epurer/internal/scantask"
 	"github.com/0SansNom/epurer/pkg/utils"
 )
 
 // DevOpsCleaner handles DevOps cleanup (Docker, Kubernetes, Terraform, Cloud CLIs)
 type DevOpsCleaner struct {
 	scanner *scanner.Scanner
+	fsCleaner
 }
 
 // NewDevOpsCleaner creates a new DevOpsCleaner
@@ -32,6 +34,7 @@ func NewDevOpsCleaner() (Cleaner, error) {
 
 // SetIgnoreList makes this cleaner respect a persistent ignore list.
 func (d *DevOpsCleaner) SetIgnoreList(l *ignorelist.List) {
+	d.fsCleaner.SetIgnoreList(l)
 	d.scanner.SetIgnoreList(l)
 }
 
@@ -56,8 +59,6 @@ func (d *DevOpsCleaner) Scan(ctx context.Context, cfg *config.Config) ([]CleanTa
 	if err != nil {
 		return nil, err
 	}
-
-
 
 	if utils.CommandExists("docker") {
 		// Dangling images (Moderate)
@@ -111,92 +112,27 @@ func (d *DevOpsCleaner) Scan(ctx context.Context, cfg *config.Config) ([]CleanTa
 		}
 	}
 
-
-
-	// kubectl cache (Safe)
-	kubeCachePath := filepath.Join(home, ".kube", "cache")
-	if utils.PathExists(kubeCachePath) {
-		size, _ := utils.GetDirSize(kubeCachePath)
-		if size > 0 {
-			targets = append(targets, CleanTarget{
-				Path:        kubeCachePath,
-				Description: "Kubernetes cache",
-				SizeBytes:   size,
-				Safety:      config.Safe,
-			})
-		}
+	walks := []scantask.Walk{
+		{Root: filepath.Join(home, ".kube", "cache"), Description: "Kubernetes cache", Safety: config.Safe},
+		{Root: filepath.Join(home, ".aws", "cli", "cache"), Description: "AWS CLI cache", Safety: config.Safe},
+		{Root: filepath.Join(home, ".cache", "helm"), Description: "Helm cache", Safety: config.Safe},
 	}
-
-	// Minikube (Moderate - can be recreated)
 	if cfg.CleanLevel.AllowsSafety(config.Moderate) {
-		minikubePath := filepath.Join(home, ".minikube")
-		if utils.PathExists(minikubePath) {
-			size, _ := utils.GetDirSize(minikubePath)
-			if size > 0 {
-				targets = append(targets, CleanTarget{
-					Path:        minikubePath,
-					Description: "Minikube cache and VMs",
-					SizeBytes:   size,
-					Safety:      config.Moderate,
-				})
-			}
-		}
+		walks = append(walks,
+			scantask.Walk{Root: filepath.Join(home, ".minikube"), Description: "Minikube", Safety: config.Moderate},
+			scantask.Walk{Root: filepath.Join(home, ".vagrant.d", "boxes"), Description: "Vagrant boxes", Safety: config.Moderate},
+		)
 	}
-
-
+	found, err := d.collect(ctx, walks...)
+	if err != nil {
+		return nil, err
+	}
+	targets = append(targets, found...)
 
 	// .terraform folders (Moderate - providers and modules)
 	if cfg.CleanLevel.AllowsSafety(config.Moderate) {
 		terraformTargets := d.scanTerraform(ctx)
 		targets = append(targets, terraformTargets...)
-	}
-
-
-
-	// AWS CLI cache (Safe)
-	awsCachePath := filepath.Join(home, ".aws", "cli", "cache")
-	if utils.PathExists(awsCachePath) {
-		size, _ := utils.GetDirSize(awsCachePath)
-		if size > 0 {
-			targets = append(targets, CleanTarget{
-				Path:        awsCachePath,
-				Description: "AWS CLI cache",
-				SizeBytes:   size,
-				Safety:      config.Safe,
-			})
-		}
-	}
-
-	// Helm cache (Safe)
-	helmCachePath := filepath.Join(home, ".cache", "helm")
-	if utils.PathExists(helmCachePath) {
-		size, _ := utils.GetDirSize(helmCachePath)
-		if size > 0 {
-			targets = append(targets, CleanTarget{
-				Path:        helmCachePath,
-				Description: "Helm cache",
-				SizeBytes:   size,
-				Safety:      config.Safe,
-			})
-		}
-	}
-
-
-
-	// Vagrant boxes (Moderate - can be large VMs)
-	if cfg.CleanLevel.AllowsSafety(config.Moderate) {
-		vagrantBoxesPath := filepath.Join(home, ".vagrant.d", "boxes")
-		if utils.PathExists(vagrantBoxesPath) {
-			size, _ := utils.GetDirSize(vagrantBoxesPath)
-			if size > 0 {
-				targets = append(targets, CleanTarget{
-					Path:        vagrantBoxesPath,
-					Description: "Vagrant boxes",
-					SizeBytes:   size,
-					Safety:      config.Moderate,
-				})
-			}
-		}
 	}
 
 	return targets, nil
@@ -220,22 +156,28 @@ func (d *DevOpsCleaner) Clean(ctx context.Context, targets []CleanTarget, dryRun
 			} else {
 				result.BytesFreed = target.SizeBytes
 			}
-		} else {
-			// Regular file/directory removal
-			if !dryRun {
-				err := utils.SafeRemove(target.Path, false)
-				if err != nil {
-					result.Success = false
-					result.Error = err
-				} else {
-					result.BytesFreed = target.SizeBytes
-				}
+		} else if !utils.CanRemove(target.Path) {
+			result.Success = false
+			result.Error = utils.ErrNotRemovable
+		} else if !dryRun {
+			if err := utils.SafeRemove(target.Path, false); err != nil {
+				result.Success = false
+				result.Error = err
 			} else {
 				result.BytesFreed = target.SizeBytes
 			}
+		} else {
+			result.BytesFreed = target.SizeBytes
 		}
 
 		results = append(results, result)
+		var freed int64
+		for _, done := range results {
+			if done.Success {
+				freed += done.BytesFreed
+			}
+		}
+		noteCleanProgress(d.progress, target.Path, len(results), freed)
 
 		select {
 		case <-ctx.Done():

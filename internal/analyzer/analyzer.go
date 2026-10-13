@@ -29,6 +29,12 @@ type Entry struct {
 // Directory sizes are computed concurrently (bounded worker pool) since a
 // naive sequential walk over many large subdirectories would be slow.
 func ListDir(path string) ([]Entry, error) {
+	return ListDirFunc(path, nil)
+}
+
+// ListDirFunc is ListDir that also calls onEntry (if set) as each child is
+// measured, with how many are done out of the total. Calls never overlap.
+func ListDirFunc(path string, onEntry func(e Entry, done, total int)) ([]Entry, error) {
 	dirEntries, err := os.ReadDir(path)
 	if err != nil {
 		return nil, err
@@ -37,6 +43,8 @@ func ListDir(path string) ([]Entry, error) {
 	entries := make([]Entry, len(dirEntries))
 
 	var wg sync.WaitGroup
+	var mu sync.Mutex
+	done := 0
 	sem := make(chan struct{}, 8)
 
 	for i, de := range dirEntries {
@@ -61,6 +69,12 @@ func ListDir(path string) ([]Entry, error) {
 			}
 
 			entries[i] = Entry{Name: de.Name(), Path: full, Size: size, IsDir: isDir, Incomplete: incomplete}
+			if onEntry != nil {
+				mu.Lock()
+				done++
+				onEntry(entries[i], done, len(dirEntries))
+				mu.Unlock()
+			}
 		}(i, de)
 	}
 

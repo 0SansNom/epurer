@@ -8,6 +8,7 @@ import (
 
 	"github.com/0SansNom/epurer/internal/config"
 	"github.com/0SansNom/epurer/internal/ignorelist"
+	"github.com/0SansNom/epurer/internal/scantask"
 )
 
 func TestFilterIgnored_NilListReturnsAll(t *testing.T) {
@@ -38,11 +39,9 @@ func TestFilterIgnored_RemovesIgnoredPaths(t *testing.T) {
 	}
 }
 
-// TestSystemCleaner_Scan_RespectsIgnoreList verifies SystemCleaner - which
-// scans fixed, well-known paths rather than a filesystem walk - still
-// honors the ignore list. Trash is used because it's a plain SafeRemove
-// target (unlike DNS/Homebrew, which use commands and have no path to
-// ignore).
+// TestSystemCleaner_Scan_RespectsIgnoreList verifies the trash cleaner
+// honors the ignore list. Trash is a plain file target, unlike DNS and
+// Homebrew, which run a command.
 func TestSystemCleaner_Scan_RespectsIgnoreList(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
@@ -75,5 +74,57 @@ func TestSystemCleaner_Scan_RespectsIgnoreList(t *testing.T) {
 		if tgt.Path == trashPath {
 			t.Errorf("Scan() still returned ignored path %q", trashPath)
 		}
+	}
+}
+
+func TestCleanTargets_ReportsProgress(t *testing.T) {
+	dir := t.TempDir()
+	a := filepath.Join(dir, "a")
+	b := filepath.Join(dir, "b")
+	if err := os.WriteFile(a, []byte("abcdefghij"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(b, []byte("abcdefghijklmnopqrst"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	var got []scantask.Progress
+	targets := []CleanTarget{
+		{Path: a, SizeBytes: 10},
+		{Path: b, SizeBytes: 20},
+	}
+	_, err := CleanTargets(context.Background(), targets, true, func(p scantask.Progress) {
+		got = append(got, p)
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 2 || got[1].Items != 2 || got[1].Bytes != 30 || got[1].Path != b {
+		t.Fatalf("progress = %#v", got)
+	}
+
+	got = nil
+	_, err = CleanTargets(context.Background(), []CleanTarget{{Path: "/", SizeBytes: 99}}, false, func(p scantask.Progress) {
+		got = append(got, p)
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 1 || got[0].Bytes != 0 || got[0].Items != 1 {
+		t.Fatalf("failed remove progress = %#v", got)
+	}
+}
+
+func TestCleanTargets_MissingPathFreesZeroBytes(t *testing.T) {
+	dir := t.TempDir()
+	missing := filepath.Join(dir, "already-gone")
+	results, err := CleanTargets(context.Background(), []CleanTarget{
+		{Path: missing, SizeBytes: 2 << 30},
+	}, false, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(results) != 1 || !results[0].Success || results[0].BytesFreed != 0 {
+		t.Fatalf("missing path result = %#v, want success with 0 bytes freed", results)
 	}
 }

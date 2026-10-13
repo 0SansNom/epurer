@@ -11,7 +11,6 @@ import (
 	"github.com/0SansNom/epurer/internal/purge"
 	"github.com/0SansNom/epurer/internal/reporter"
 	"github.com/0SansNom/epurer/internal/scanner"
-	"github.com/0SansNom/epurer/internal/tui"
 	"github.com/0SansNom/epurer/pkg/utils"
 )
 
@@ -32,16 +31,19 @@ for removable build artifacts - node_modules, target, .venv, Pods, vendor,
 .next, .turbo, and similar - and groups them by the project they belong to.
 
 Artifacts older than --min-age (default 7 days) are preselected. Pass a path
-to scan a specific directory instead of the default project roots.`,
+to scan a specific directory instead of the default project roots.
+
+Interactive review lives in the Épurer macOS app; this command is for scripts
+and one-shot CLI use.`,
 		Args: cobra.MaximumNArgs(1),
 		RunE: runPurge,
 	}
 
 	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "Show what would be purged without actually deleting")
 	cmd.Flags().DurationVar(&purgeMinAge, "min-age", 7*24*time.Hour, "Preselect artifacts older than this duration")
-	cmd.Flags().BoolVar(&purgeForce, "force", false, "Skip the interactive TUI and purge preselected artifacts (still asks for confirmation unless --yes is also set)")
+	cmd.Flags().BoolVar(&purgeForce, "force", false, "Skip nothing extra (kept for scripts; purge always runs non-interactively)")
 	cmd.Flags().BoolVar(&purgeAll, "all", false, "Ignore age preselection and consider every found artifact")
-	cmd.Flags().BoolVar(&purgeYes, "yes", false, "With --force, skip the confirmation prompt too (fully non-interactive)")
+	cmd.Flags().BoolVar(&purgeYes, "yes", false, "Skip the confirmation prompt (fully non-interactive)")
 
 	return cmd
 }
@@ -64,9 +66,12 @@ func runPurge(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if ignList, err := ignorelist.Load(); err == nil {
-		s.SetIgnoreList(ignList)
+	ignList, err := ignorelist.Load()
+	if err != nil {
+		rep.PrintError(fmt.Sprintf("Failed to load ignore list: %v", err))
+		return fmt.Errorf("cannot load ignore list: %w", err)
 	}
+	s.SetIgnoreList(ignList)
 
 	minAge := purgeMinAge
 	if purgeAll {
@@ -88,14 +93,10 @@ func runPurge(cmd *cobra.Command, args []string) error {
 
 	rep.PrintPurgeReport(projects)
 
-	if purgeForce {
-		return runPurgeForce(ctx, rep, projects)
-	}
-
-	return tui.RunPurge(projects, dryRun)
+	return runPurgeCLI(ctx, rep, projects)
 }
 
-// candidateArtifacts returns the artifacts --force would act on: every
+// candidateArtifacts returns the artifacts purge would act on: every
 // artifact when --all is set, otherwise only the age-preselected ones.
 func candidateArtifacts(projects []purge.Project) []purge.Artifact {
 	var candidates []purge.Artifact
@@ -109,11 +110,11 @@ func candidateArtifacts(projects []purge.Project) []purge.Artifact {
 	return candidates
 }
 
-// runPurgeForce removes every preselected artifact (or, with --all, every
-// found artifact) without launching the interactive TUI. Unless --yes is
-// also set, it still asks for a single y/N confirmation before deleting
-// anything - --force only skips the per-project review, not confirmation.
-func runPurgeForce(ctx context.Context, rep *reporter.Reporter, projects []purge.Project) error {
+// runPurgeCLI removes preselected artifacts (or, with --all, every found
+// artifact). Unless --yes is set, it asks for a single y/N confirmation.
+func runPurgeCLI(ctx context.Context, rep *reporter.Reporter, projects []purge.Project) error {
+	_ = purgeForce // retained for backward-compatible scripts
+
 	candidates := candidateArtifacts(projects)
 
 	if len(candidates) == 0 {

@@ -8,12 +8,14 @@ import (
 	"github.com/0SansNom/epurer/internal/config"
 	"github.com/0SansNom/epurer/internal/ignorelist"
 	"github.com/0SansNom/epurer/internal/scanner"
+	"github.com/0SansNom/epurer/internal/scantask"
 	"github.com/0SansNom/epurer/pkg/utils"
 )
 
 // MobileCleaner handles mobile development cleanup (iOS, Android, Flutter)
 type MobileCleaner struct {
 	scanner *scanner.Scanner
+	fsCleaner
 }
 
 // NewMobileCleaner creates a new MobileCleaner
@@ -30,6 +32,7 @@ func NewMobileCleaner() (Cleaner, error) {
 
 // SetIgnoreList makes this cleaner respect a persistent ignore list.
 func (m *MobileCleaner) SetIgnoreList(l *ignorelist.List) {
+	m.fsCleaner.SetIgnoreList(l)
 	m.scanner.SetIgnoreList(l)
 }
 
@@ -57,208 +60,29 @@ func (m *MobileCleaner) Scan(ctx context.Context, cfg *config.Config) ([]CleanTa
 		return nil, err
 	}
 
-
-
-	// DerivedData (Safe - always rebuilt)
-	derivedDataPath := filepath.Join(home, "Library", "Developer", "Xcode", "DerivedData")
-	if utils.PathExists(derivedDataPath) {
-		size, _ := utils.GetDirSize(derivedDataPath)
-		if size > 0 {
-			targets = append(targets, CleanTarget{
-				Path:        derivedDataPath,
-				Description: "Xcode DerivedData (rebuilds automatically)",
-				SizeBytes:   size,
-				Safety:      config.Safe,
-			})
-		}
-	}
-
-	// Archives (Moderate - old app versions)
-	if cfg.CleanLevel.AllowsSafety(config.Moderate) {
-		archivesPath := filepath.Join(home, "Library", "Developer", "Xcode", "Archives")
-		if utils.PathExists(archivesPath) {
-			size, _ := utils.GetDirSize(archivesPath)
-			if size > 0 {
-				targets = append(targets, CleanTarget{
-					Path:        archivesPath,
-					Description: "Xcode Archives (old app versions)",
-					SizeBytes:   size,
-					Safety:      config.Moderate,
-				})
-			}
-		}
-	}
-
-	// Module cache (Safe)
-	moduleCachePath := filepath.Join(home, "Library", "Developer", "Xcode", "DerivedData", "ModuleCache.noindex")
-	if utils.PathExists(moduleCachePath) {
-		size, _ := utils.GetDirSize(moduleCachePath)
-		if size > 0 {
-			targets = append(targets, CleanTarget{
-				Path:        moduleCachePath,
-				Description: "Xcode Module Cache",
-				SizeBytes:   size,
-				Safety:      config.Safe,
-			})
-		}
-	}
-
-	// iOS Device Support (Safe - re-downloaded as needed)
-	deviceSupportPath := filepath.Join(home, "Library", "Developer", "Xcode", "iOS DeviceSupport")
-	if utils.PathExists(deviceSupportPath) {
-		size, _ := utils.GetDirSize(deviceSupportPath)
-		if size > 0 {
-			targets = append(targets, CleanTarget{
-				Path:        deviceSupportPath,
-				Description: "iOS Device Support symbols",
-				SizeBytes:   size,
-				Safety:      config.Safe,
-			})
-		}
-	}
-
-	// watchOS Device Support
-	watchDeviceSupportPath := filepath.Join(home, "Library", "Developer", "Xcode", "watchOS DeviceSupport")
-	if utils.PathExists(watchDeviceSupportPath) {
-		size, _ := utils.GetDirSize(watchDeviceSupportPath)
-		if size > 0 {
-			targets = append(targets, CleanTarget{
-				Path:        watchDeviceSupportPath,
-				Description: "watchOS Device Support symbols",
-				SizeBytes:   size,
-				Safety:      config.Safe,
-			})
-		}
-	}
-
-	// tvOS Device Support
-	tvDeviceSupportPath := filepath.Join(home, "Library", "Developer", "Xcode", "tvOS DeviceSupport")
-	if utils.PathExists(tvDeviceSupportPath) {
-		size, _ := utils.GetDirSize(tvDeviceSupportPath)
-		if size > 0 {
-			targets = append(targets, CleanTarget{
-				Path:        tvDeviceSupportPath,
-				Description: "tvOS Device Support symbols",
-				SizeBytes:   size,
-				Safety:      config.Safe,
-			})
-		}
-	}
-
-	// CoreSimulator Caches (Moderate)
-	if cfg.CleanLevel.AllowsSafety(config.Moderate) {
-		simCachePath := filepath.Join(home, "Library", "Developer", "CoreSimulator", "Caches")
-		if utils.PathExists(simCachePath) {
-			size, _ := utils.GetDirSize(simCachePath)
-			if size > 0 {
-				targets = append(targets, CleanTarget{
-					Path:        simCachePath,
-					Description: "iOS Simulator caches",
-					SizeBytes:   size,
-					Safety:      config.Moderate,
-				})
-			}
-		}
-
-		// Old simulator devices (can be huge)
-		devicesPath := filepath.Join(home, "Library", "Developer", "CoreSimulator", "Devices")
-		if utils.PathExists(devicesPath) {
-			size, _ := utils.GetDirSize(devicesPath)
-			if size > 0 {
-				targets = append(targets, CleanTarget{
-					Path:        devicesPath,
-					Description: "iOS Simulator devices (can be recreated)",
-					SizeBytes:   size,
-					Safety:      config.Moderate,
-				})
-			}
-		}
-	}
-
-	// Xcode cache
-	xcodeCachePath := filepath.Join(home, "Library", "Caches", "com.apple.dt.Xcode")
-	if utils.PathExists(xcodeCachePath) {
-		size, _ := utils.GetDirSize(xcodeCachePath)
-		if size > 0 {
-			targets = append(targets, CleanTarget{
-				Path:        xcodeCachePath,
-				Description: "Xcode general cache",
-				SizeBytes:   size,
-				Safety:      config.Safe,
-			})
-		}
-	}
-
-
+	// Xcode DerivedData, archives, device support, and simulator data are
+	// walked by the Xcode cleaner. Caches such as com.apple.dt.Xcode and
+	// CocoaPods are top-level entries of ~/Library/Caches.
 
 	// Android build folders (Safe - rebuilt)
 	androidBuildTargets := m.scanAndroidBuildFolders(ctx)
 	targets = append(targets, androidBuildTargets...)
 
-	// Gradle cache (Safe)
-	gradleCachePath := filepath.Join(home, ".gradle", "caches")
-	if utils.PathExists(gradleCachePath) {
-		size, _ := utils.GetDirSize(gradleCachePath)
-		if size > 0 {
-			targets = append(targets, CleanTarget{
-				Path:        gradleCachePath,
-				Description: "Gradle cache",
-				SizeBytes:   size,
-				Safety:      config.Safe,
-			})
-		}
+	walks := []scantask.Walk{
+		{Root: filepath.Join(home, "Library", "Android", "sdk", "build-cache"), Description: "Android SDK build cache", Safety: config.Safe},
 	}
-
-	// Android SDK build cache (Safe)
-	androidSDKPath := filepath.Join(home, "Library", "Android", "sdk")
-	if utils.PathExists(androidSDKPath) {
-		buildCachePath := filepath.Join(androidSDKPath, "build-cache")
-		if utils.PathExists(buildCachePath) {
-			size, _ := utils.GetDirSize(buildCachePath)
-			if size > 0 {
-				targets = append(targets, CleanTarget{
-					Path:        buildCachePath,
-					Description: "Android SDK build cache",
-					SizeBytes:   size,
-					Safety:      config.Safe,
-				})
-			}
-		}
-	}
-
-	// AVD (Android Virtual Devices) - Moderate
 	if cfg.CleanLevel.AllowsSafety(config.Moderate) {
-		avdPath := filepath.Join(home, ".android", "avd")
-		if utils.PathExists(avdPath) {
-			size, _ := utils.GetDirSize(avdPath)
-			if size > 0 {
-				targets = append(targets, CleanTarget{
-					Path:        avdPath,
-					Description: "Android Virtual Devices",
-					SizeBytes:   size,
-					Safety:      config.Moderate,
-				})
-			}
-		}
+		walks = append(walks, scantask.Walk{
+			Root:        filepath.Join(home, ".android", "avd"),
+			Description: "Android Virtual Devices",
+			Safety:      config.Moderate,
+		})
 	}
-
-
-
-	// CocoaPods cache (Safe)
-	podsCachePath := filepath.Join(home, "Library", "Caches", "CocoaPods")
-	if utils.PathExists(podsCachePath) {
-		size, _ := utils.GetDirSize(podsCachePath)
-		if size > 0 {
-			targets = append(targets, CleanTarget{
-				Path:        podsCachePath,
-				Description: "CocoaPods cache",
-				SizeBytes:   size,
-				Safety:      config.Safe,
-			})
-		}
+	found, err := m.collect(ctx, walks...)
+	if err != nil {
+		return nil, err
 	}
-
-
+	targets = append(targets, found...)
 
 	// .dart_tool (Safe - rebuilt)
 	dartToolTargets := m.scanDartTool(ctx)
@@ -272,7 +96,7 @@ func (m *MobileCleaner) Scan(ctx context.Context, cfg *config.Config) ([]CleanTa
 }
 
 func (m *MobileCleaner) Clean(ctx context.Context, targets []CleanTarget, dryRun bool) ([]CleanResult, error) {
-	return CleanTargets(ctx, targets, dryRun)
+	return CleanTargets(ctx, targets, dryRun, m.progress)
 }
 
 // scanAndroidBuildFolders scans for Android build folders

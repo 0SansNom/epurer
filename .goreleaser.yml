@@ -1,5 +1,8 @@
 project_name: epurer
 
+# Keep goreleaser out of dist/, which holds Épurer.app and Epurer.dmg.
+dist: build/goreleaser
+
 before:
   hooks:
     - go mod tidy
@@ -26,6 +29,10 @@ archives:
       - README.md
       - LICENSE
       - Makefile
+
+release:
+  extra_files:
+    - glob: ./dist/Epurer.dmg
 
 checksum:
   name_template: "{{ .ProjectName }}_{{ .Version }}_checksums.txt"

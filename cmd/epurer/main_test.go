@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/0SansNom/epurer/internal/cleaner"
@@ -84,6 +86,7 @@ func TestMatchesDomain(t *testing.T) {
 		{"data/ml", "data/ml", true},
 		{"trash", "system", true},
 		{"homebrew", "system", true},
+		{"xcode deriveddata", "mobile", true},
 		{"frontend", "backend", false},
 		{"mobile", "devops", false},
 	}
@@ -124,9 +127,31 @@ func TestApplyIgnoreList_OnlyAppliesToIgnoreAwareCleaners(t *testing.T) {
 	aware := &fakeIgnoreAwareCleaner{fakeCleaner: fakeCleaner{name: "Frontend"}}
 	unaware := &fakeCleaner{name: "System"}
 
-	applyIgnoreList([]cleaner.Cleaner{aware, unaware})
+	if err := applyIgnoreList([]cleaner.Cleaner{aware, unaware}); err != nil {
+		t.Fatalf("applyIgnoreList() error = %v", err)
+	}
 
 	if aware.ignoreList == nil {
 		t.Error("expected the ignore-aware cleaner to receive a non-nil ignore list")
+	}
+}
+
+func TestApplyIgnoreList_CorruptFileFailsClosed(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	dir := filepath.Join(home, "Library", "Application Support", "epurer")
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "ignore.json"), []byte("{not json"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	aware := &fakeIgnoreAwareCleaner{fakeCleaner: fakeCleaner{name: "Frontend"}}
+	if err := applyIgnoreList([]cleaner.Cleaner{aware}); err == nil {
+		t.Fatal("expected corrupt ignore.json to fail closed")
+	}
+	if aware.ignoreList != nil {
+		t.Fatal("cleaner must not receive a list when load fails")
 	}
 }

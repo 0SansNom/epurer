@@ -8,12 +8,14 @@ import (
 	"github.com/0SansNom/epurer/internal/config"
 	"github.com/0SansNom/epurer/internal/ignorelist"
 	"github.com/0SansNom/epurer/internal/scanner"
+	"github.com/0SansNom/epurer/internal/scantask"
 	"github.com/0SansNom/epurer/pkg/utils"
 )
 
 // BackendCleaner handles backend development cleanup (Python, Java, Go, Rust, PHP, Ruby)
 type BackendCleaner struct {
 	scanner *scanner.Scanner
+	fsCleaner
 }
 
 // NewBackendCleaner creates a new BackendCleaner
@@ -30,6 +32,7 @@ func NewBackendCleaner() (Cleaner, error) {
 
 // SetIgnoreList makes this cleaner respect a persistent ignore list.
 func (b *BackendCleaner) SetIgnoreList(l *ignorelist.List) {
+	b.fsCleaner.SetIgnoreList(l)
 	b.scanner.SetIgnoreList(l)
 }
 
@@ -42,14 +45,21 @@ func (b *BackendCleaner) Domain() config.Domain {
 }
 
 func (b *BackendCleaner) Detect(ctx context.Context) (bool, error) {
-	// Check for common backend tools
-	return utils.CommandExists("python3") ||
+	if utils.CommandExists("python3") ||
 		utils.CommandExists("python") ||
 		utils.CommandExists("java") ||
 		utils.CommandExists("go") ||
 		utils.CommandExists("cargo") ||
 		utils.CommandExists("php") ||
-		utils.CommandExists("ruby"), nil
+		utils.CommandExists("ruby") {
+		return true, nil
+	}
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return false, err
+	}
+	// Android Studio often ships Java off PATH. The cache is still this cleaner's job.
+	return utils.PathExists(filepath.Join(home, ".gradle", "caches")), nil
 }
 
 func (b *BackendCleaner) Scan(ctx context.Context, cfg *config.Config) ([]CleanTarget, error) {
@@ -58,8 +68,6 @@ func (b *BackendCleaner) Scan(ctx context.Context, cfg *config.Config) ([]CleanT
 	if err != nil {
 		return nil, err
 	}
-
-
 
 	// __pycache__ (Safe - automatically rebuilt)
 	pycacheTargets := b.scanPattern(ctx, "__pycache__")
@@ -81,138 +89,35 @@ func (b *BackendCleaner) Scan(ctx context.Context, cfg *config.Config) ([]CleanT
 	toxTargets := b.scanPattern(ctx, ".tox")
 	targets = append(targets, toxTargets...)
 
-	// pip cache (Safe)
-	pipCachePath := filepath.Join(home, "Library", "Caches", "pip")
-	if utils.PathExists(pipCachePath) {
-		size, _ := utils.GetDirSize(pipCachePath)
-		if size > 0 {
-			targets = append(targets, CleanTarget{
-				Path:        pipCachePath,
-				Description: "pip cache",
-				SizeBytes:   size,
-				Safety:      config.Safe,
-			})
-		}
+	// pip, Poetry, and the Go build cache are top-level entries of ~/Library/Caches.
+
+	walks := []scantask.Walk{
+		{Root: filepath.Join(home, ".cargo", "registry"), Description: "Cargo registry cache", Safety: config.Safe},
+		{Root: filepath.Join(home, ".composer", "cache"), Description: "Composer cache", Safety: config.Safe},
+		{Root: filepath.Join(home, ".gem", "cache"), Description: "Ruby gem cache", Safety: config.Safe},
+		{Root: filepath.Join(home, ".bundle", "cache"), Description: "Bundler cache", Safety: config.Safe},
+		{Root: filepath.Join(home, ".gradle", "caches"), Description: "Gradle cache", Safety: config.Safe},
 	}
-
-	// Poetry cache (Safe)
-	poetryCachePath := filepath.Join(home, "Library", "Caches", "pypoetry")
-	if utils.PathExists(poetryCachePath) {
-		size, _ := utils.GetDirSize(poetryCachePath)
-		if size > 0 {
-			targets = append(targets, CleanTarget{
-				Path:        poetryCachePath,
-				Description: "Poetry cache",
-				SizeBytes:   size,
-				Safety:      config.Safe,
-			})
-		}
-	}
-
-
-
-	// Maven local repository (Moderate - can be large)
 	if cfg.CleanLevel.AllowsSafety(config.Moderate) {
-		mavenRepoPath := filepath.Join(home, ".m2", "repository")
-		if utils.PathExists(mavenRepoPath) {
-			size, _ := utils.GetDirSize(mavenRepoPath)
-			if size > 0 {
-				targets = append(targets, CleanTarget{
-					Path:        mavenRepoPath,
-					Description: "Maven local repository",
-					SizeBytes:   size,
-					Safety:      config.Moderate,
-				})
-			}
-		}
+		walks = append(walks,
+			scantask.Walk{Root: filepath.Join(home, ".m2", "repository"), Description: "Maven local repository", Safety: config.Moderate},
+			scantask.Walk{Root: filepath.Join(home, "go", "pkg", "mod"), Description: "Go module cache", Safety: config.Moderate},
+		)
 	}
-
-	// Gradle cache (Safe)
-	gradleCachePath := filepath.Join(home, ".gradle", "caches")
-	if utils.PathExists(gradleCachePath) {
-		size, _ := utils.GetDirSize(gradleCachePath)
-		if size > 0 {
-			targets = append(targets, CleanTarget{
-				Path:        gradleCachePath,
-				Description: "Gradle cache",
-				SizeBytes:   size,
-				Safety:      config.Safe,
-			})
-		}
+	found, err := b.collect(ctx, walks...)
+	if err != nil {
+		return nil, err
 	}
+	targets = append(targets, found...)
 
 	// target folders (Java/Scala build output - Safe)
 	targetTargets := b.scanPattern(ctx, "target")
 	targets = append(targets, targetTargets...)
 
-
-
-	// Go build cache (Safe)
-	goCachePath := filepath.Join(home, "Library", "Caches", "go-build")
-	if utils.PathExists(goCachePath) {
-		size, _ := utils.GetDirSize(goCachePath)
-		if size > 0 {
-			targets = append(targets, CleanTarget{
-				Path:        goCachePath,
-				Description: "Go build cache",
-				SizeBytes:   size,
-				Safety:      config.Safe,
-			})
-		}
-	}
-
-	// Go module cache (Moderate - can be large)
-	if cfg.CleanLevel.AllowsSafety(config.Moderate) {
-		goModCachePath := filepath.Join(home, "go", "pkg", "mod")
-		if utils.PathExists(goModCachePath) {
-			size, _ := utils.GetDirSize(goModCachePath)
-			if size > 0 {
-				targets = append(targets, CleanTarget{
-					Path:        goModCachePath,
-					Description: "Go module cache",
-					SizeBytes:   size,
-					Safety:      config.Moderate,
-				})
-			}
-		}
-	}
-
-
-
-	// Cargo cache (Safe)
-	cargoCachePath := filepath.Join(home, ".cargo", "registry")
-	if utils.PathExists(cargoCachePath) {
-		size, _ := utils.GetDirSize(cargoCachePath)
-		if size > 0 {
-			targets = append(targets, CleanTarget{
-				Path:        cargoCachePath,
-				Description: "Cargo registry cache",
-				SizeBytes:   size,
-				Safety:      config.Safe,
-			})
-		}
-	}
-
 	// Rust target folders (Moderate - build artifacts)
 	if cfg.CleanLevel.AllowsSafety(config.Moderate) {
 		rustTargetTargets := b.scanRustTargets(ctx)
 		targets = append(targets, rustTargetTargets...)
-	}
-
-
-
-	// Composer cache (Safe)
-	composerCachePath := filepath.Join(home, ".composer", "cache")
-	if utils.PathExists(composerCachePath) {
-		size, _ := utils.GetDirSize(composerCachePath)
-		if size > 0 {
-			targets = append(targets, CleanTarget{
-				Path:        composerCachePath,
-				Description: "Composer cache",
-				SizeBytes:   size,
-				Safety:      config.Safe,
-			})
-		}
 	}
 
 	// vendor folders (Moderate - PHP dependencies)
@@ -221,44 +126,11 @@ func (b *BackendCleaner) Scan(ctx context.Context, cfg *config.Config) ([]CleanT
 		targets = append(targets, vendorTargets...)
 	}
 
-
-
-	// Gem cache (Safe)
-	gemCachePath := filepath.Join(home, ".gem")
-	if utils.PathExists(gemCachePath) {
-		cachePath := filepath.Join(gemCachePath, "cache")
-		if utils.PathExists(cachePath) {
-			size, _ := utils.GetDirSize(cachePath)
-			if size > 0 {
-				targets = append(targets, CleanTarget{
-					Path:        cachePath,
-					Description: "Ruby gem cache",
-					SizeBytes:   size,
-					Safety:      config.Safe,
-				})
-			}
-		}
-	}
-
-	// Bundler cache (Safe)
-	bundlerCachePath := filepath.Join(home, ".bundle", "cache")
-	if utils.PathExists(bundlerCachePath) {
-		size, _ := utils.GetDirSize(bundlerCachePath)
-		if size > 0 {
-			targets = append(targets, CleanTarget{
-				Path:        bundlerCachePath,
-				Description: "Bundler cache",
-				SizeBytes:   size,
-				Safety:      config.Safe,
-			})
-		}
-	}
-
 	return targets, nil
 }
 
 func (b *BackendCleaner) Clean(ctx context.Context, targets []CleanTarget, dryRun bool) ([]CleanResult, error) {
-	return CleanTargets(ctx, targets, dryRun)
+	return CleanTargets(ctx, targets, dryRun, b.progress)
 }
 
 // scanPattern scans for a specific pattern
@@ -339,12 +211,12 @@ func (b *BackendCleaner) scanPHPVendor(ctx context.Context) []CleanTarget {
 // getDescriptionForPattern returns a human-readable description
 func (b *BackendCleaner) getDescriptionForPattern(pattern string) string {
 	descriptions := map[string]string{
-		"__pycache__":    "Python bytecode cache",
-		"*.pyc":          "Python compiled files",
-		".pytest_cache":  "pytest cache",
-		".mypy_cache":    "mypy type checker cache",
-		".tox":           "tox test environments",
-		"target":         "Build output (target)",
+		"__pycache__":   "Python bytecode cache",
+		"*.pyc":         "Python compiled files",
+		".pytest_cache": "pytest cache",
+		".mypy_cache":   "mypy type checker cache",
+		".tox":          "tox test environments",
+		"target":        "Build output (target)",
 	}
 
 	if desc, ok := descriptions[pattern]; ok {

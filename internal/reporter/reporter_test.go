@@ -5,12 +5,14 @@ import (
 	"errors"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/0SansNom/epurer/internal/cleaner"
 	"github.com/0SansNom/epurer/internal/config"
 	"github.com/0SansNom/epurer/internal/version"
+	"github.com/0SansNom/epurer/pkg/utils"
 )
 
 // captureOutput captures stdout during function execution
@@ -29,9 +31,7 @@ func captureOutput(f func()) string {
 	return buf.String()
 }
 
-
 // NewReporter Tests
-
 
 func TestNewReporter(t *testing.T) {
 	r := NewReporter(false)
@@ -53,9 +53,7 @@ func TestNewReporter_Verbose(t *testing.T) {
 	}
 }
 
-
 // Helper Function Tests
-
 
 func TestGetImpactString(t *testing.T) {
 	tests := []struct {
@@ -104,9 +102,7 @@ func TestGetActionVerb(t *testing.T) {
 	}
 }
 
-
 // PrintHeader Tests
-
 
 func TestPrintHeader(t *testing.T) {
 	r := NewReporter(false)
@@ -124,9 +120,7 @@ func TestPrintHeader(t *testing.T) {
 	}
 }
 
-
 // PrintDetection Tests
-
 
 func TestPrintDetection(t *testing.T) {
 	r := NewReporter(false)
@@ -187,9 +181,7 @@ func TestPrintDetection_Empty(t *testing.T) {
 	}
 }
 
-
 // PrintEstimation Tests
-
 
 func TestPrintEstimation(t *testing.T) {
 	r := NewReporter(false)
@@ -254,9 +246,7 @@ func TestPrintEstimation_AllSafetyLevels(t *testing.T) {
 	}
 }
 
-
 // PrintTargetDetails Tests
-
 
 func TestPrintTargetDetails_NotVerbose(t *testing.T) {
 	r := NewReporter(false)
@@ -307,9 +297,7 @@ func TestPrintTargetDetails_Empty(t *testing.T) {
 	_ = output
 }
 
-
 // PrintProgress Tests
-
 
 func TestPrintProgress(t *testing.T) {
 	r := NewReporter(false)
@@ -340,9 +328,7 @@ func TestPrintProgress_Complete(t *testing.T) {
 	}
 }
 
-
 // PrintCleanResults Tests
-
 
 func TestPrintCleanResults_DryRun(t *testing.T) {
 	r := NewReporter(false)
@@ -438,9 +424,7 @@ func TestPrintCleanResults_Empty(t *testing.T) {
 	}
 }
 
-
 // Print Message Tests
-
 
 func TestPrintWarning(t *testing.T) {
 	r := NewReporter(false)
@@ -490,9 +474,7 @@ func TestPrintInfo(t *testing.T) {
 	}
 }
 
-
 // PrintSafetyLegend Tests
-
 
 func TestPrintSafetyLegend(t *testing.T) {
 	r := NewReporter(false)
@@ -516,9 +498,7 @@ func TestPrintSafetyLegend(t *testing.T) {
 	}
 }
 
-
 // Style Tests (verify styles are initialized)
-
 
 func TestStyles_Initialized(t *testing.T) {
 	// Verify that all style variables are initialized
@@ -547,9 +527,7 @@ func TestStyles_Initialized(t *testing.T) {
 	}
 }
 
-
 // Integration Tests
-
 
 func TestReporter_FullWorkflow(t *testing.T) {
 	r := NewReporter(true)
@@ -590,9 +568,7 @@ func TestReporter_FullWorkflow(t *testing.T) {
 	}
 }
 
-
 // Edge Cases
-
 
 func TestReporter_LargeNumbers(t *testing.T) {
 	r := NewReporter(false)
@@ -626,5 +602,102 @@ func TestReporter_SpecialCharacters(t *testing.T) {
 	// Should handle special characters without panic
 	if !strings.Contains(output, "spaces") {
 		t.Error("Output should contain message with spaces")
+	}
+}
+
+func TestParseSkipList(t *testing.T) {
+	skip, err := ParseSkipList("  ")
+	if err != nil || len(skip) != 0 {
+		t.Fatalf("empty input = %v, %v", skip, err)
+	}
+
+	skip, err = ParseSkipList("1, 3, 5-7")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, n := range []int{1, 3, 5, 6, 7} {
+		if _, ok := skip[n]; !ok {
+			t.Errorf("missing %d in %v", n, skip)
+		}
+	}
+	if len(skip) != 5 {
+		t.Errorf("got %d numbers, want 5", len(skip))
+	}
+
+	if _, err := ParseSkipList("0"); err == nil {
+		t.Error("zero should be rejected")
+	}
+	if _, err := ParseSkipList("4-2"); err == nil {
+		t.Error("reversed range should be rejected")
+	}
+	if _, err := ParseSkipList("nope"); err == nil {
+		t.Error("garbage should be rejected")
+	}
+}
+
+func TestFilterTargets(t *testing.T) {
+	groups := map[string][]cleaner.CleanTarget{
+		"beta":  {{Path: "/b1"}, {Path: "/b2"}},
+		"alpha": {{Path: "/a1"}},
+	}
+	kept, err := FilterTargets(groups, map[int]struct{}{2: {}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(kept["alpha"]) != 1 || kept["alpha"][0].Path != "/a1" || len(kept["beta"]) != 1 || kept["beta"][0].Path != "/b2" {
+		t.Errorf("kept = %#v", kept)
+	}
+
+	if _, err := FilterTargets(groups, map[int]struct{}{9: {}}); err == nil {
+		t.Error("out of range should be rejected")
+	}
+}
+
+func TestPartitionRemovable(t *testing.T) {
+	if os.Geteuid() == 0 {
+		t.Skip("running as root - permission bits don't block access")
+	}
+	dir := t.TempDir()
+	mine := filepath.Join(dir, "mine")
+	if err := os.WriteFile(mine, []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	lockedDir := filepath.Join(dir, "locked")
+	if err := os.Mkdir(lockedDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	held := filepath.Join(lockedDir, "held")
+	if err := os.WriteFile(held, []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chmod(lockedDir, 0o555); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.Chmod(lockedDir, 0o755) })
+
+	kept, locked := PartitionRemovable(map[string][]cleaner.CleanTarget{
+		"System": {
+			{Path: mine, Description: "mine"},
+			{Path: held, Description: "held", SizeBytes: 4},
+			{Path: "system:dns_cache", Description: "dns"},
+		},
+	})
+	if len(kept["System"]) != 2 || len(locked) != 1 || locked[0].Path != held {
+		t.Fatalf("kept = %#v, locked = %#v", kept["System"], locked)
+	}
+}
+
+func TestPrintCleanResults_LeftInPlace(t *testing.T) {
+	r := NewReporter(false)
+	output := captureOutput(func() {
+		r.PrintCleanResults([]cleaner.CleanResult{
+			{Target: cleaner.CleanTarget{Path: "/Library/Caches"}, Success: false, Error: utils.ErrNotRemovable},
+		}, false)
+	})
+	if !strings.Contains(output, "Left in place") || !strings.Contains(output, "admin password") {
+		t.Fatalf("output = %s", output)
+	}
+	if strings.Contains(output, "Failure") {
+		t.Fatalf("locked result counted as a failure: %s", output)
 	}
 }

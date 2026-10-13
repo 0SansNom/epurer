@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/0SansNom/epurer/internal/config"
@@ -92,8 +93,8 @@ func TestAICleaner_Scan_RespectsIgnoreList(t *testing.T) {
 	}
 
 	for _, tgt := range targets {
-		if tgt.Path == cursorCache {
-			t.Errorf("Scan() still returned ignored path %q", cursorCache)
+		if tgt.Path == cursorCache || strings.HasPrefix(tgt.Path, cursorCache+string(filepath.Separator)) {
+			t.Errorf("Scan() still returned ignored path %q", tgt.Path)
 		}
 	}
 }

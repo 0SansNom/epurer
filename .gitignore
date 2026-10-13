@@ -2,6 +2,10 @@
 /epurer
 bin/
 dist/
+build/
+app/Epurer/.engine/
+app/Epurer/.build/
+app/EpurerApp/xcuserdata/
 *.exe
 *.dll
 *.dylib
@@ -28,3 +32,8 @@ vendor/
 # OS
 .Spotlight-V100
 .Trashes
+
+# Local design dumps (not part of the repo; hero lives in docs/assets/)
+/Epurer-Assets.zip
+/epurer-hero.png
+/epurer-hero.jpg

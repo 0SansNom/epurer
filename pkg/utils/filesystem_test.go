@@ -252,10 +252,13 @@ func TestSafeRemove_Directory(t *testing.T) {
 }
 
 func TestSafeRemove_NonExistent(t *testing.T) {
-	// SafeRemove on non-existent path should not error (RemoveAll behavior)
-	err := SafeRemove("/nonexistent/path/12345", false)
-	if err != nil {
-		t.Errorf("SafeRemove(nonexistent) returned error: %v", err)
+	dir := t.TempDir()
+	missing := filepath.Join(dir, "gone")
+	if err := SafeRemove(missing, false); err != nil {
+		t.Errorf("SafeRemove(missing in writable dir) = %v", err)
+	}
+	if err := SafeRemove("/nonexistent/path/12345", false); !errors.Is(err, ErrNotRemovable) {
+		t.Errorf("SafeRemove(unwritable parent) = %v, want ErrNotRemovable", err)
 	}
 }
 
@@ -296,8 +299,8 @@ func TestCommandExists(t *testing.T) {
 		cmd      string
 		expected bool
 	}{
-		{"ls command", "ls", true},           // Should exist on all Unix systems
-		{"cat command", "cat", true},         // Should exist on all Unix systems
+		{"ls command", "ls", true},   // Should exist on all Unix systems
+		{"cat command", "cat", true}, // Should exist on all Unix systems
 		{"nonexistent", "nonexistent12345", false},
 		{"empty string", "", false},
 	}
@@ -369,5 +372,83 @@ func TestIsWritable_ReadOnlyDir(t *testing.T) {
 
 	if IsWritable(tmpDir) {
 		t.Errorf("IsWritable(read-only dir) = true, want false")
+	}
+}
+
+func TestIsProtectedPath_SymlinkToRoot(t *testing.T) {
+	dir := t.TempDir()
+	link := filepath.Join(dir, "to-root")
+	if err := os.Symlink("/", link); err != nil {
+		t.Fatal(err)
+	}
+	if !isProtectedPath(link) {
+		t.Fatal("symlink to / should be treated as protected")
+	}
+	if err := SafeRemove(link, false); err == nil {
+		t.Fatal("SafeRemove should refuse a symlink to /")
+	}
+}
+
+func TestCanRemove(t *testing.T) {
+	if os.Geteuid() == 0 {
+		t.Skip("running as root - permission bits don't block access")
+	}
+	if !CanRemove("system:dns_cache") || !CanRemove("docker:dangling") {
+		t.Error("pseudo command targets should stay removable for their cleaners")
+	}
+	if CanRemove("/") || CanRemove("") || CanRemove("relative/cache") {
+		t.Error("protected, empty, or relative paths should not be removable")
+	}
+	if err := SafeRemove("relative/cache", false); !errors.Is(err, ErrNotRemovable) {
+		t.Errorf("SafeRemove(relative) = %v, want ErrNotRemovable", err)
+	}
+	if err := SafeRemove("docker:dangling", false); err == nil {
+		t.Error("SafeRemove must refuse pseudo paths")
+	}
+
+	dir := t.TempDir()
+	file := filepath.Join(dir, "mine")
+	if err := os.WriteFile(file, []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if !CanRemove(file) {
+		t.Error("file in a writable directory should be removable")
+	}
+	if !CanRemove(filepath.Join(dir, "missing")) {
+		t.Error("missing file with a writable parent should be removable")
+	}
+
+	locked := filepath.Join(dir, "locked")
+	if err := os.Mkdir(locked, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	held := filepath.Join(locked, "held")
+	if err := os.WriteFile(held, []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chmod(locked, 0o555); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.Chmod(locked, 0o755) })
+	if CanRemove(held) {
+		t.Error("file in a read-only directory should not be removable")
+	}
+}
+
+func TestCanRemove_StickyParentOwnFile(t *testing.T) {
+	if os.Geteuid() == 0 {
+		t.Skip("running as root - sticky ownership checks differ")
+	}
+	dir := t.TempDir()
+	file := filepath.Join(dir, "mine")
+	if err := os.WriteFile(file, []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chmod(dir, 0o1755); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.Chmod(dir, 0o755) })
+	if !CanRemove(file) {
+		t.Error("own file in a sticky writable parent should be removable")
 	}
 }
