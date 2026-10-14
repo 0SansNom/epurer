@@ -82,3 +82,27 @@ func TestIsIgnored(t *testing.T) {
 		}
 	}
 }
+
+func TestIsIgnored_RootCoversChildren(t *testing.T) {
+	l := &List{Paths: []string{"/"}}
+	if !l.IsIgnored("/Users/someone/Library/Caches") {
+		t.Fatal("ignore / should cover absolute children")
+	}
+	if !l.IsIgnored("/") {
+		t.Fatal("ignore / should cover / itself")
+	}
+}
+
+func TestIsIgnored_NormalizeErrorFailsClosed(t *testing.T) {
+	l := newTestList(t)
+	t.Setenv("HOME", "")
+	// Prefer getpwuid-backed home resolution to fail when possible. If the
+	// platform still resolves a home for "~", skip — fail-closed is the
+	// documented IsIgnored contract when normalize returns an error.
+	if _, err := normalize("~/nowhere"); err == nil {
+		t.Skip("platform resolved home without HOME; cannot exercise fail-closed branch")
+	}
+	if !l.IsIgnored("~/nowhere") {
+		t.Fatal("normalize failure must fail closed (ignored)")
+	}
+}

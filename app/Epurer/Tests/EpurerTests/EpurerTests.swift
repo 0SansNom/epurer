@@ -106,3 +106,59 @@ final class ProjectsSearchTests: XCTestCase {
         XCTAssertEqual(model.searchTotal, 11)
     }
 }
+
+/// French is the catalog's source language but not the bundle's development
+/// region (English), so a key without an explicit "fr" value is looked up in
+/// English on a French Mac. Every key needs both.
+final class LocalizationCatalogTests: XCTestCase {
+    func testEveryKeyHasFrenchAndEnglish() throws {
+        let url = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().appendingPathComponent("../../../EpurerApp/Localizable.xcstrings")
+        let catalog = try JSONSerialization.jsonObject(with: Data(contentsOf: url)) as! [String: Any]
+        let strings = catalog["strings"] as! [String: [String: Any]]
+        let missing = strings.filter { _, entry in
+            guard entry["shouldTranslate"] as? Bool != false else { return false }
+            let loc = entry["localizations"] as? [String: Any] ?? [:]
+            return loc["fr"] == nil || loc["en"] == nil
+        }.keys.sorted()
+        XCTAssertEqual(missing, [], "Keys without a French or English value")
+    }
+}
+
+/// The engine sends English names that the app translates at display time
+/// (`String.engineLocalized`). A name added to the Go code without a catalog
+/// entry would show in English on a French Mac.
+final class EngineNamesCatalogTests: XCTestCase {
+    func testEveryEngineNameIsInTheCatalog() throws {
+        let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().appendingPathComponent("../../../..")
+        let catalogURL = root.appendingPathComponent("app/EpurerApp/Localizable.xcstrings")
+        let catalog = try JSONSerialization.jsonObject(with: Data(contentsOf: catalogURL)) as! [String: Any]
+        let keys = Set((catalog["strings"] as! [String: Any]).keys)
+
+        // The literal forms the cleaners use for names and descriptions.
+        let patterns = [
+            #"(?:Description|description):\s*"([^"]+)""#,
+            #"desc\s*=\s*"([^"]+)""#,
+            #"systemCleaner\{name:\s*"([^"]+)"\}"#,
+        ]
+        var names = Set<String>()
+        let files = FileManager.default.enumerator(at: root.appendingPathComponent("internal"), includingPropertiesForKeys: nil)!
+        for case let url as URL in files where url.pathExtension == "go" && !url.lastPathComponent.hasSuffix("_test.go") {
+            let source = try String(contentsOf: url, encoding: .utf8)
+            for pattern in patterns { names.formUnion(matches(pattern, in: source)) }
+            // Values of the `descriptions := map[string]string{ … }` tables.
+            for block in matches(#"descriptions := map\[string\]string\{([^}]*)\}"#, in: source) {
+                names.formUnion(matches(#""[^"]*":\s*"([^"]+)""#, in: block))
+            }
+        }
+        XCTAssertGreaterThan(names.count, 50, "The source scan found too few names; the patterns are out of date")
+        XCTAssertEqual(names.subtracting(keys).sorted(), [], "Engine names missing from Localizable.xcstrings")
+    }
+
+    private func matches(_ pattern: String, in text: String) -> [String] {
+        let regex = try! NSRegularExpression(pattern: pattern)
+        return regex.matches(in: text, range: NSRange(text.startIndex..., in: text)).compactMap {
+            Range($0.range(at: 1), in: text).map { String(text[$0]) }
+        }
+    }
+}

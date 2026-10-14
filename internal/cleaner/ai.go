@@ -113,5 +113,5 @@ func (a *AICleaner) Scan(ctx context.Context, cfg *config.Config) ([]CleanTarget
 }
 
 func (a *AICleaner) Clean(ctx context.Context, targets []CleanTarget, dryRun bool) ([]CleanResult, error) {
-	return CleanTargets(ctx, targets, dryRun, a.progress)
+	return CleanTargets(ctx, targets, dryRun, a.progress, a.ignore)
 }

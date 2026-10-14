@@ -25,11 +25,13 @@ func (s *Scanner) SetIgnoreList(l *ignorelist.List) {
 	s.ignoreList = l
 }
 
-// ScanResult contains a found path and its size
+// ScanResult contains a found path and its size.
+// Pattern is the glob that matched the base name, when the search used one.
 type ScanResult struct {
-	Path string
-	Size int64
-	Err  error
+	Path    string
+	Pattern string
+	Size    int64
+	Err     error
 }
 
 // NewScanner creates a new Scanner with default configuration
@@ -88,18 +90,21 @@ func (s *Scanner) SetWorkers(n int) {
 	}
 }
 
-// FindByPattern searches for all files/directories matching the pattern
-// Pattern can be:
-// - A glob pattern like "node_modules" or "*.log"
-// - A path pattern like "**/node_modules" for recursive search
+// FindByPattern searches for all files and directories matching pattern.
+// Pattern is a base-name glob such as "node_modules" or "*.log".
 func (s *Scanner) FindByPattern(ctx context.Context, pattern string) <-chan ScanResult {
-	results := make(chan ScanResult, 100) // Buffered channel for better performance
+	return s.FindByPatterns(ctx, []string{pattern})
+}
+
+// FindByPatterns walks each search directory once and matches every pattern.
+func (s *Scanner) FindByPatterns(ctx context.Context, patterns []string) <-chan ScanResult {
+	results := make(chan ScanResult, 100)
 
 	go func() {
 		defer close(results)
 
 		var wg sync.WaitGroup
-		semaphore := make(chan struct{}, s.workers) // Limit concurrent workers
+		semaphore := make(chan struct{}, s.workers)
 
 		for _, dir := range s.searchDirs {
 			select {
@@ -109,29 +114,17 @@ func (s *Scanner) FindByPattern(ctx context.Context, pattern string) <-chan Scan
 			}
 
 			wg.Add(1)
-			semaphore <- struct{}{} // Acquire
+			semaphore <- struct{}{}
 
 			go func(searchDir string) {
 				defer wg.Done()
-				defer func() { <-semaphore }() // Release
+				defer func() { <-semaphore }()
 
-				s.walkAndMatch(ctx, searchDir, pattern, results)
+				s.walkAndMatch(ctx, searchDir, patterns, results)
 			}(dir)
 		}
 
 		wg.Wait()
-	}()
-
-	return results
-}
-
-// FindByPatternInDir searches for pattern in a specific directory
-func (s *Scanner) FindByPatternInDir(ctx context.Context, dir, pattern string) <-chan ScanResult {
-	results := make(chan ScanResult, 100)
-
-	go func() {
-		defer close(results)
-		s.walkAndMatch(ctx, dir, pattern, results)
 	}()
 
 	return results
@@ -158,23 +151,19 @@ func (s *Scanner) FindExactPath(path string) (ScanResult, error) {
 	}, err
 }
 
-// walkAndMatch walks a directory tree and sends matching paths to results
-func (s *Scanner) walkAndMatch(ctx context.Context, searchDir, pattern string, results chan<- ScanResult) {
+// walkAndMatch walks a directory tree and sends matching paths to results.
+func (s *Scanner) walkAndMatch(ctx context.Context, searchDir string, patterns []string, results chan<- ScanResult) {
 	filepath.WalkDir(searchDir, func(path string, d fs.DirEntry, err error) error {
-		// Check context cancellation
 		select {
 		case <-ctx.Done():
 			return filepath.SkipAll
 		default:
 		}
 
-		// Skip if we can't access this path
 		if err != nil {
-			// Don't send errors for permission issues, just skip
 			return nil
 		}
 
-		// Skip paths covered by the ignore list entirely
 		if s.ignoreList != nil && s.ignoreList.IsIgnored(path) {
 			if d.IsDir() {
 				return filepath.SkipDir
@@ -182,38 +171,36 @@ func (s *Scanner) walkAndMatch(ctx context.Context, searchDir, pattern string, r
 			return nil
 		}
 
-		// Check if the base name matches the pattern
 		baseName := filepath.Base(path)
-		matched, err := filepath.Match(pattern, baseName)
-		if err != nil {
-			return nil // Invalid pattern, skip
+		var matched string
+		for _, pattern := range patterns {
+			ok, err := filepath.Match(pattern, baseName)
+			if err != nil || !ok {
+				continue
+			}
+			matched = pattern
+			break
+		}
+		if matched == "" {
+			return nil
 		}
 
-		if matched {
-			size := int64(0)
-
-			// Calculate size
-			if d.IsDir() {
-				size, _ = s.calculateDirSize(path)
-			} else {
-				if info, err := d.Info(); err == nil {
-					size = info.Size()
-				}
-			}
-
-			// Send result
-			select {
-			case results <- ScanResult{Path: path, Size: size}:
-			case <-ctx.Done():
-				return filepath.SkipAll
-			}
-
-			// Don't descend into matched directories
-			if d.IsDir() {
-				return filepath.SkipDir
-			}
+		size := int64(0)
+		if d.IsDir() {
+			size, _ = s.calculateDirSize(path)
+		} else if info, err := d.Info(); err == nil {
+			size = info.Size()
 		}
 
+		select {
+		case results <- ScanResult{Path: path, Pattern: matched, Size: size}:
+		case <-ctx.Done():
+			return filepath.SkipAll
+		}
+
+		if d.IsDir() {
+			return filepath.SkipDir
+		}
 		return nil
 	})
 }
@@ -221,17 +208,6 @@ func (s *Scanner) walkAndMatch(ctx context.Context, searchDir, pattern string, r
 // calculateDirSize calculates the total size of a directory recursively
 func (s *Scanner) calculateDirSize(path string) (int64, error) {
 	return utils.GetDirSize(path)
-}
-
-// FindMultiplePatterns searches for multiple patterns concurrently
-func (s *Scanner) FindMultiplePatterns(ctx context.Context, patterns []string) map[string]<-chan ScanResult {
-	results := make(map[string]<-chan ScanResult)
-
-	for _, pattern := range patterns {
-		results[pattern] = s.FindByPattern(ctx, pattern)
-	}
-
-	return results
 }
 
 // GetSearchDirs returns the directories that will be searched

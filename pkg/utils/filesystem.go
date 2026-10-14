@@ -175,7 +175,9 @@ func CanRemove(path string) bool {
 	}
 	stat, ok := info.Sys().(*syscall.Stat_t)
 	if !ok {
-		return true
+		// Fail closed: without ownership metadata we cannot prove this
+		// process owns the name in a sticky directory.
+		return false
 	}
 	return int(stat.Uid) == os.Getuid()
 }
@@ -203,32 +205,4 @@ func SafeRemove(path string, dryRun bool) error {
 func CommandExists(cmd string) bool {
 	_, err := exec.LookPath(cmd)
 	return err == nil
-}
-
-// IsWritable checks if a path is writable by the current user
-func IsWritable(path string) bool {
-	// Try to create a temp file in the directory
-	if !PathExists(path) {
-		return false
-	}
-
-	info, err := os.Stat(path)
-	if err != nil {
-		return false
-	}
-
-	// If it's a directory, try to create a temp file in it
-	if info.IsDir() {
-		testFile := filepath.Join(path, ".write_test")
-		file, err := os.Create(testFile)
-		if err != nil {
-			return false
-		}
-		file.Close()
-		os.Remove(testFile)
-		return true
-	}
-
-	// If it's a file, check the directory
-	return IsWritable(filepath.Dir(path))
 }

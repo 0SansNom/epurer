@@ -67,10 +67,6 @@ struct PreviewPanel: View {
         HStack {
             Spacer()
             if confirming {
-                Button("Prévisualiser") { model.setPreviewMode(.preview) }
-                    .buttonStyle(LinkStyle())
-                    .fontWeight(.semibold)
-                    .padding(.trailing, 16)
                 Button("Annuler") { model.closePreview() }
                     .buttonStyle(QuietStyle())
                     .keyboardShortcut(.cancelAction)
@@ -124,7 +120,7 @@ struct PreviewPanel: View {
 
     static func leftAside(request: PreviewRequest, failed: Int, locked: Int) -> String? {
         var seen = Set<String>()
-        let names = request.skipped.map { $0.project ?? $0.target.description }.filter { seen.insert($0).inserted }
+        let names = request.skipped.map { $0.project ?? $0.target.label }.filter { seen.insert($0).inserted }
         var parts: [String] = []
         if !names.isEmpty {
             let shown = names.prefix(noteLimit).joined(separator: ", ")
@@ -175,10 +171,10 @@ struct PreviewRow: View {
                     HStack(spacing: 4) {
                         Text(project)
                         Text("/").foregroundStyle(Palette.muted)
-                        Text(entry.target.description).font(.system(size: 13, design: .monospaced))
+                        Text(entry.target.label).font(.system(size: 13, design: .monospaced))
                     }
                 } else {
-                    Text(entry.target.description)
+                    Text(entry.target.label)
                 }
             }
             .font(.system(size: 14))

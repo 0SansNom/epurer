@@ -2,9 +2,12 @@ package cleaner
 
 import (
 	"context"
+	"fmt"
+	"math"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/0SansNom/epurer/internal/config"
@@ -61,54 +64,38 @@ func (d *DevOpsCleaner) Scan(ctx context.Context, cfg *config.Config) ([]CleanTa
 	}
 
 	if utils.CommandExists("docker") {
-		// Dangling images (Moderate)
-		if cfg.CleanLevel.AllowsSafety(config.Moderate) {
-			danglingSize := d.getDockerDanglingSize()
-			if danglingSize > 0 {
-				targets = append(targets, CleanTarget{
-					Path:        "docker:images:dangling",
-					Description: "Docker dangling images",
-					SizeBytes:   danglingSize,
-					Safety:      config.Moderate,
-				})
-			}
+		images, containers, volumes, buildCache := dockerReclaimableSizes()
+		if cfg.CleanLevel.AllowsSafety(config.Moderate) && images > 0 {
+			targets = append(targets, CleanTarget{
+				Path:        "docker:images:dangling",
+				Description: "Docker dangling images",
+				SizeBytes:   images,
+				Safety:      config.Moderate,
+			})
 		}
-
-		// Stopped containers (Moderate)
-		if cfg.CleanLevel.AllowsSafety(config.Moderate) {
-			stoppedSize := d.getDockerStoppedContainersSize()
-			if stoppedSize > 0 {
-				targets = append(targets, CleanTarget{
-					Path:        "docker:containers:stopped",
-					Description: "Docker stopped containers",
-					SizeBytes:   stoppedSize,
-					Safety:      config.Moderate,
-				})
-			}
+		if cfg.CleanLevel.AllowsSafety(config.Moderate) && containers > 0 {
+			targets = append(targets, CleanTarget{
+				Path:        "docker:containers:stopped",
+				Description: "Docker stopped containers",
+				SizeBytes:   containers,
+				Safety:      config.Moderate,
+			})
 		}
-
-		// Build cache (Safe)
-		buildCacheSize := d.getDockerBuildCacheSize()
-		if buildCacheSize > 0 {
+		if buildCache > 0 {
 			targets = append(targets, CleanTarget{
 				Path:        "docker:buildcache",
 				Description: "Docker build cache",
-				SizeBytes:   buildCacheSize,
+				SizeBytes:   buildCache,
 				Safety:      config.Safe,
 			})
 		}
-
-		// Unused volumes (Dangerous - may contain data)
-		if cfg.CleanLevel.AllowsSafety(config.Dangerous) {
-			volumeSize := d.getDockerUnusedVolumesSize()
-			if volumeSize > 0 {
-				targets = append(targets, CleanTarget{
-					Path:        "docker:volumes:unused",
-					Description: "Docker unused volumes (DANGEROUS - may contain data)",
-					SizeBytes:   volumeSize,
-					Safety:      config.Dangerous,
-				})
-			}
+		if cfg.CleanLevel.AllowsSafety(config.Dangerous) && volumes > 0 {
+			targets = append(targets, CleanTarget{
+				Path:        "docker:volumes:unused",
+				Description: "Docker unused volumes (DANGEROUS - may contain data)",
+				SizeBytes:   volumes,
+				Safety:      config.Dangerous,
+			})
 		}
 	}
 
@@ -156,6 +143,9 @@ func (d *DevOpsCleaner) Clean(ctx context.Context, targets []CleanTarget, dryRun
 			} else {
 				result.BytesFreed = target.SizeBytes
 			}
+		} else if d.ignore != nil && d.ignore.IsIgnored(target.Path) {
+			result.Success = false
+			result.Error = fmt.Errorf("%w: on the ignore list", utils.ErrNotRemovable)
 		} else if !utils.CanRemove(target.Path) {
 			result.Success = false
 			result.Error = utils.ErrNotRemovable
@@ -189,76 +179,81 @@ func (d *DevOpsCleaner) Clean(ctx context.Context, targets []CleanTarget, dryRun
 	return results, nil
 }
 
-// Docker helper methods
-
-func (d *DevOpsCleaner) getDockerDanglingSize() int64 {
-	cmd := exec.Command("docker", "images", "-f", "dangling=true", "-q")
-	output, err := cmd.Output()
+// dockerReclaimableSizes reads the RECLAIMABLE column of `docker system df`.
+// A missing row, a zero size, or a size that cannot be parsed yields 0, so the target is skipped.
+func dockerReclaimableSizes() (images, containers, volumes, buildCache int64) {
+	output, err := exec.Command("docker", "system", "df").Output()
 	if err != nil {
-		return 0
+		return 0, 0, 0, 0
 	}
-
-	lines := strings.Split(strings.TrimSpace(string(output)), "\n")
-	if len(lines) == 0 || (len(lines) == 1 && lines[0] == "") {
-		return 0
-	}
-
-	// Estimate: ~100MB per dangling image (conservative)
-	return int64(len(lines)) * 100 * 1024 * 1024
+	return parseDockerReclaimable(string(output))
 }
 
-func (d *DevOpsCleaner) getDockerStoppedContainersSize() int64 {
-	cmd := exec.Command("docker", "ps", "-a", "-f", "status=exited", "-q")
-	output, err := cmd.Output()
-	if err != nil {
-		return 0
-	}
-
-	lines := strings.Split(strings.TrimSpace(string(output)), "\n")
-	if len(lines) == 0 || (len(lines) == 1 && lines[0] == "") {
-		return 0
-	}
-
-	// Estimate: ~50MB per stopped container (conservative)
-	return int64(len(lines)) * 50 * 1024 * 1024
-}
-
-func (d *DevOpsCleaner) getDockerBuildCacheSize() int64 {
-	cmd := exec.Command("docker", "system", "df", "-v")
-	output, err := cmd.Output()
-	if err != nil {
-		return 0
-	}
-
-	// Parse output to find build cache size
-	// For now, return a conservative estimate
-	lines := strings.Split(string(output), "\n")
-	for _, line := range lines {
-		if strings.Contains(line, "Build Cache") {
-			// Try to parse the size
-			// Format: "Build Cache   X   Y   Z"
-			// This is a simplified approach
-			return 1024 * 1024 * 1024 // 1GB estimate
+func parseDockerReclaimable(output string) (images, containers, volumes, buildCache int64) {
+	for _, line := range strings.Split(output, "\n") {
+		line = strings.TrimSpace(line)
+		switch {
+		case strings.HasPrefix(line, "Images"):
+			images = dockerReclaimableSize(line)
+		case strings.HasPrefix(line, "Containers"):
+			containers = dockerReclaimableSize(line)
+		case strings.HasPrefix(line, "Local Volumes"):
+			volumes = dockerReclaimableSize(line)
+		case strings.HasPrefix(line, "Build Cache"):
+			buildCache = dockerReclaimableSize(line)
 		}
 	}
-
-	return 0
+	return images, containers, volumes, buildCache
 }
 
-func (d *DevOpsCleaner) getDockerUnusedVolumesSize() int64 {
-	cmd := exec.Command("docker", "volume", "ls", "-f", "dangling=true", "-q")
-	output, err := cmd.Output()
-	if err != nil {
+func dockerReclaimableSize(line string) int64 {
+	if i := strings.Index(line, "("); i >= 0 {
+		line = line[:i]
+	}
+	fields := strings.Fields(line)
+	if len(fields) == 0 {
 		return 0
 	}
+	return parseDockerSize(fields[len(fields)-1])
+}
 
-	lines := strings.Split(strings.TrimSpace(string(output)), "\n")
-	if len(lines) == 0 || (len(lines) == 1 && lines[0] == "") {
+func parseDockerSize(raw string) int64 {
+	raw = strings.TrimSpace(raw)
+	i := 0
+	for i < len(raw) && (raw[i] == '.' || (raw[i] >= '0' && raw[i] <= '9')) {
+		i++
+	}
+	if i == 0 {
 		return 0
 	}
-
-	// Estimate: ~200MB per volume (very conservative)
-	return int64(len(lines)) * 200 * 1024 * 1024
+	n, err := strconv.ParseFloat(raw[:i], 64)
+	if err != nil || n <= 0 {
+		return 0
+	}
+	var mul float64
+	switch strings.ToUpper(strings.TrimSpace(raw[i:])) {
+	case "B":
+		mul = 1
+	case "KB":
+		mul = 1e3
+	case "KIB":
+		mul = 1024
+	case "MB":
+		mul = 1e6
+	case "MIB":
+		mul = 1024 * 1024
+	case "GB":
+		mul = 1e9
+	case "GIB":
+		mul = 1024 * 1024 * 1024
+	case "TB":
+		mul = 1e12
+	case "TIB":
+		mul = 1024 * 1024 * 1024 * 1024
+	default:
+		return 0
+	}
+	return int64(math.Round(n * mul))
 }
 
 func (d *DevOpsCleaner) cleanDockerTarget(target string, dryRun bool) error {
@@ -275,9 +270,9 @@ func (d *DevOpsCleaner) cleanDockerTarget(target string, dryRun bool) error {
 		return exec.Command("docker", "builder", "prune", "-f").Run()
 	case "docker:volumes:unused":
 		return exec.Command("docker", "volume", "prune", "-f").Run()
+	default:
+		return fmt.Errorf("unknown docker target %q", target)
 	}
-
-	return nil
 }
 
 // scanTerraform scans for .terraform folders

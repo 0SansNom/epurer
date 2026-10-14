@@ -284,7 +284,7 @@ struct DeleteModal: View {
 
     var body: some View {
         ZStack {
-            Color(hex: 0x2B3752, opacity: 0.14)
+            Palette.scrim
                 .ignoresSafeArea()
                 .onTapGesture(perform: onCancel)
 
@@ -317,7 +317,7 @@ struct DeleteModal: View {
             }
             .padding(EdgeInsets(top: 30, leading: 32, bottom: 24, trailing: 32))
             .frame(width: 440, alignment: .leading)
-            .background(RoundedRectangle(cornerRadius: 24).fill(.white.opacity(0.96)))
+            .background(RoundedRectangle(cornerRadius: 24).fill(Palette.surface))
             .shadow(color: Color(hex: 0x2B3752, opacity: 0.18), radius: 35, y: 30)
             .accessibilityElement(children: .contain)
             .accessibilityAddTraits(.isModal)
@@ -456,10 +456,12 @@ struct EntryRow: View {
                 // Révéler and Protéger live in the right-click menu (n3).
                 if selected {
                     Button("Supprimer", action: onDelete)
-                        .buttonStyle(LinkStyle(color: Palette.danger, size: 12))
+                        .buttonStyle(LinkStyle(color: Palette.deleteLabel, size: 12))
+                        .fontWeight(.semibold)
                         .disabled(!entry.removable)
                         .help(entry.removable ? "" : entry.ignored ? "Chemin protégé" : "Cet utilisateur ne peut pas le supprimer")
-                } else if entry.isDir {
+                }
+                if entry.isDir {
                     Button(action: onOpen) {
                         Image(systemName: "chevron.right")
                             .font(.system(size: 11, weight: .semibold))
@@ -678,7 +680,7 @@ struct ProjectsView: View {
                         .buttonStyle(LinkStyle())
                         .disabled(model.cleaning)
                         .padding(.trailing, 18)
-                    Text("\(Fmt.count(model.chosenProjects.count)) · \(Fmt.bytes(model.chosenBytes))")
+                    Text("\(String(localized: "\(model.chosenProjects.count) sélectionnés")) · \(Fmt.bytes(model.chosenBytes))")
                         .font(.system(size: 14))
                         .foregroundStyle(Palette.muted)
                         .monospacedDigit()
@@ -903,6 +905,9 @@ struct ProjectRow: View {
                     HStack(spacing: 0) {
                         Text(project.artifacts.map(\.kind).joined(separator: ", ") + " · ")
                         Text(displayPath(project.root)).font(.system(size: 11, design: .monospaced))
+                        if interactive && !checked {
+                            Text(" · non sélectionné")
+                        }
                     }
                     .font(.system(size: 11))
                     .foregroundStyle(Palette.muted)

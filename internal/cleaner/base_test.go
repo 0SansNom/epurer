@@ -95,7 +95,7 @@ func TestCleanTargets_ReportsProgress(t *testing.T) {
 	}
 	_, err := CleanTargets(context.Background(), targets, true, func(p scantask.Progress) {
 		got = append(got, p)
-	})
+	}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -106,7 +106,7 @@ func TestCleanTargets_ReportsProgress(t *testing.T) {
 	got = nil
 	_, err = CleanTargets(context.Background(), []CleanTarget{{Path: "/", SizeBytes: 99}}, false, func(p scantask.Progress) {
 		got = append(got, p)
-	})
+	}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -120,11 +120,32 @@ func TestCleanTargets_MissingPathFreesZeroBytes(t *testing.T) {
 	missing := filepath.Join(dir, "already-gone")
 	results, err := CleanTargets(context.Background(), []CleanTarget{
 		{Path: missing, SizeBytes: 2 << 30},
-	}, false, nil)
+	}, false, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(results) != 1 || !results[0].Success || results[0].BytesFreed != 0 {
 		t.Fatalf("missing path result = %#v, want success with 0 bytes freed", results)
+	}
+}
+
+func TestCleanTargets_RefusesIgnoredPath(t *testing.T) {
+	dir := t.TempDir()
+	file := filepath.Join(dir, "cache")
+	if err := os.WriteFile(file, []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	ignore := &ignorelist.List{Paths: []string{dir}}
+	results, err := CleanTargets(context.Background(), []CleanTarget{
+		{Path: file, SizeBytes: 1},
+	}, false, nil, ignore)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(results) != 1 || results[0].Success || results[0].Error == nil {
+		t.Fatalf("ignored result = %#v", results)
+	}
+	if _, err := os.Stat(file); err != nil {
+		t.Fatalf("ignored path was touched: %v", err)
 	}
 }

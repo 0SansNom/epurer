@@ -255,22 +255,18 @@ struct ProtectedPathsView: View {
 
     private var emptyState: some View {
         VStack(spacing: 0) {
-            VStack(spacing: 0) {
+            StateCard(
+                ring: .dashed,
+                title: dropTargeted ? String(localized: "Relâchez pour protéger") : String(localized: "Rien n’est protégé"),
+                text: String(localized: "Glissez un dossier ici."),
+                card: false
+            ) {
                 Mascot(mood: .content, size: 84)
-                Text(dropTargeted ? "Relâchez pour protéger" : "Rien n’est protégé")
-                    .font(.system(size: 18, weight: .semibold))
-                    .padding(.top, 10)
-                Text("Glissez un dossier ici.")
-                    .foregroundStyle(Palette.muted)
-                    .padding(.top, 4)
+            } action: {
                 Button("Choisir un dossier…") { model.choose() }
-                    .buttonStyle(PrimaryPillStyle(height: 44, horizontalPadding: 28))
+                    .buttonStyle(PrimaryPillStyle(height: 34, horizontalPadding: 22))
                     .keyboardShortcut(.defaultAction)
-                    .padding(.top, 16)
             }
-            .frame(width: 520, height: 270)
-            .background(RoundedRectangle(cornerRadius: 28).fill(Palette.accent.opacity(dropTargeted ? 0.10 : 0.06)))
-            .overlay(dropBorder(cornerRadius: 28))
 
             ForEach(model.notes, id: \.self) { note in
                 NoteView(note: note)
@@ -307,8 +303,8 @@ struct ProtectedPathsView: View {
             .foregroundStyle(.white)
             .padding(.horizontal, 18)
             .frame(height: 44)
-            .background(RoundedRectangle(cornerRadius: 14).fill(Palette.ink))
-            .shadow(color: Palette.ink.opacity(0.25), radius: 15, y: 14)
+            .background(RoundedRectangle(cornerRadius: 14).fill(Color(hex: 0x2B3752)))
+            .shadow(color: Color(hex: 0x2B3752, opacity: 0.25), radius: 15, y: 14)
             .padding(.bottom, 24)
             .transition(.move(edge: .bottom).combined(with: .opacity))
         }
@@ -321,15 +317,12 @@ struct NoteView: View {
     var body: some View {
         Group {
             switch note {
+            // One sentence per note, so a language can reorder it; the counts only choose the plural form.
             case .covered(let parent, let children):
-                (Text(displayPath(parent)).bold() + Text(" est déjà protégé. ")
-                    + Self.boldList(children)
-                    + Text(children.count > 1 ? " en font partie." : " en fait partie."))
-                    .foregroundStyle(Color(hex: 0x7A5210))
+                Text(AttributedString(localized: "\(Self.bold([displayPath(parent)])) est déjà protégé. \(Self.bold(children)) \(children.count) en font partie."))
+                    .foregroundStyle(Palette.amberText)
             case .system(let paths):
-                (Text("Épurer ne peut pas modifier ") + Self.boldList(paths.map(displayPath))
-                    + Text(paths.count > 1 ? " : ces chemins sont hors de portée. Inutile de les protéger."
-                                           : " : ce chemin est hors de portée. Inutile de le protéger."))
+                Text(AttributedString(localized: "Épurer ne peut pas modifier \(Self.bold(paths.map(displayPath))) : \(paths.count) chemins hors de portée."))
                     .foregroundStyle(Palette.ink)
             }
         }
@@ -341,12 +334,14 @@ struct NoteView: View {
         .background(RoundedRectangle(cornerRadius: 14).fill(tint))
     }
 
-    /// "a, b et c" with each name in bold.
-    static func boldList(_ names: [String]) -> Text {
-        names.enumerated().reduce(Text("")) { text, item in
-            let sep = item.offset == 0 ? "" : (item.offset == names.count - 1 ? " et " : ", ")
-            return text + Text(sep) + Text(item.element).bold()
+    /// "a, b et c" ("a, b, and c" in English) with each name in bold.
+    static func bold(_ names: [String]) -> AttributedString {
+        var list = AttributedString(names.formatted(.list(type: .and)))
+        for name in names {
+            // shortcut: bolds the first match only, fine unless one name contains another.
+            if let range = list.range(of: name) { list[range].inlinePresentationIntent = .stronglyEmphasized }
         }
+        return list
     }
 
     private var tint: Color {
@@ -391,7 +386,7 @@ struct ProtectedRow: View {
             if !exists {
                 Text(isVolume ? "Non monté" : "Introuvable")
                     .font(.system(size: 11))
-                    .foregroundStyle(Color(hex: 0x8A5A10))
+                    .foregroundStyle(Palette.amberText)
                     .padding(.horizontal, 9)
                     .frame(height: 20)
                     .background(Capsule().fill(Palette.moderate.opacity(0.2)))
@@ -409,7 +404,7 @@ struct ProtectedRow: View {
                         Button("Révéler dans le Finder") { reveal() }
                         Button("Retirer", action: onRemove)
                     } label: {
-                        Text("···").font(.system(size: 18)).tracking(2).foregroundStyle(Color(hex: 0x9AA5B8))
+                        Text("···").font(.system(size: 18)).tracking(2).foregroundStyle(Palette.faint)
                     }
                     .menuStyle(.borderlessButton)
                     .menuIndicator(.hidden)

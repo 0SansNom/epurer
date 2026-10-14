@@ -15,6 +15,7 @@ import (
 	"github.com/0SansNom/epurer/internal/reporter"
 	"github.com/0SansNom/epurer/internal/scantask"
 	"github.com/0SansNom/epurer/internal/version"
+	"github.com/0SansNom/epurer/pkg/utils"
 )
 
 var (
@@ -26,6 +27,9 @@ var (
 	// Clean command flags
 	cleanLevel string
 	domains    []string
+
+	// Smart command flags
+	smartYes bool
 )
 
 func main() {
@@ -124,11 +128,14 @@ func newSmartCmd() *cobra.Command {
 		Use:   "smart",
 		Short: "Smart automatic cleanup based on detected tools",
 		Long: `Automatically detects installed development tools and performs an intelligent cleanup
-using conservative settings. Perfect for quick, safe cleanup.`,
+using conservative settings. Perfect for quick, safe cleanup.
+
+Confirmation is required before deleting unless --yes or --dry-run is set.`,
 		RunE: runSmart,
 	}
 
 	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "Show what would be cleaned without actually deleting")
+	cmd.Flags().BoolVar(&smartYes, "yes", false, "Skip the confirmation prompt (fully non-interactive)")
 
 	return cmd
 }
@@ -482,6 +489,26 @@ func runSmart(cmd *cobra.Command, args []string) error {
 	if dryRun {
 		rep.PrintInfo("DRY RUN - No files will be deleted")
 		return nil
+	}
+
+	totalTargets := 0
+	var totalBytes int64
+	for _, targets := range targetsByDomain {
+		totalTargets += len(targets)
+		for _, t := range targets {
+			totalBytes += t.SizeBytes
+		}
+	}
+	if totalTargets == 0 {
+		rep.PrintInfo("Nothing to clean!")
+		return nil
+	}
+	if !smartYes {
+		msg := fmt.Sprintf("Smart-clean %d items (%s)? This cannot be undone", totalTargets, utils.FormatBytes(totalBytes))
+		if !rep.AskConfirmation(msg) {
+			rep.PrintInfo("Cancelled")
+			return nil
+		}
 	}
 
 	// Execute cleanup

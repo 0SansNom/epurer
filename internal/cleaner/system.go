@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"github.com/0SansNom/epurer/internal/config"
 	"github.com/0SansNom/epurer/internal/scantask"
@@ -27,7 +28,7 @@ func (systemCleaner) Detect(context.Context) (bool, error) {
 }
 
 func (s *systemCleaner) Clean(ctx context.Context, targets []CleanTarget, dryRun bool) ([]CleanResult, error) {
-	return CleanTargets(ctx, targets, dryRun, s.progress)
+	return CleanTargets(ctx, targets, dryRun, s.progress, s.ignore)
 }
 
 // fixed keeps a target that did not come from a walk, unless the ignore list covers it.
@@ -201,12 +202,16 @@ func (c *logCleaner) Scan(ctx context.Context, cfg *config.Config) ([]CleanTarge
 type tempCleaner struct{ systemCleaner }
 
 func (c *tempCleaner) Scan(ctx context.Context, cfg *config.Config) ([]CleanTarget, error) {
+	// /tmp holds in-progress work. Offer it only at aggressive, and do not preselect it.
+	if !cfg.CleanLevel.AllowsSafety(config.Dangerous) {
+		return nil, nil
+	}
 	var walks []scantask.Walk
 	for _, path := range []string{"/private/var/tmp", "/private/tmp"} {
 		walks = append(walks, scantask.Walk{
 			Root:        path,
 			Description: fmt.Sprintf("Temporary files in %s", path),
-			Safety:      config.Safe,
+			Safety:      config.Dangerous,
 		})
 	}
 	return c.collect(ctx, walks...)
@@ -232,7 +237,12 @@ func (c *dnsCleaner) Clean(ctx context.Context, targets []CleanTarget, dryRun bo
 		default:
 		}
 
-		err := flushDNSCache(ctx, dryRun)
+		var err error
+		if target.Path != "system:dns_cache" {
+			err = fmt.Errorf("%w: unexpected DNS target %q", utils.ErrNotRemovable, target.Path)
+		} else {
+			err = flushDNSCache(ctx, dryRun)
+		}
 		results = append(results, CleanResult{
 			Target:  target,
 			Success: err == nil,
@@ -254,7 +264,9 @@ func flushDNSCache(ctx context.Context, dryRun bool) error {
 	}
 
 	cmd = exec.CommandContext(ctx, "killall", "-HUP", "mDNSResponder")
-	cmd.Run()
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("failed to signal mDNSResponder: %w", err)
+	}
 	return nil
 }
 
@@ -265,13 +277,11 @@ func (c *homebrewCleaner) Detect(context.Context) (bool, error) {
 }
 
 func (c *homebrewCleaner) Scan(ctx context.Context, cfg *config.Config) ([]CleanTarget, error) {
-	cmd := exec.Command("brew", "--cache")
-	output, err := cmd.Output()
+	cachePath, err := homebrewCachePath()
 	if err != nil {
 		return nil, err
 	}
 
-	cachePath := filepath.Clean(string(output[:len(output)-1]))
 	if utils.PathExists(cachePath) {
 		size, _ := utils.GetDirSize(cachePath)
 		if size > 0 {
@@ -296,12 +306,14 @@ func (c *homebrewCleaner) Clean(ctx context.Context, targets []CleanTarget, dryR
 		default:
 		}
 
-		err := cleanupHomebrew(ctx, dryRun)
+		err := c.cleanupHomebrewTarget(ctx, target.Path, dryRun)
 		result := CleanResult{
-			Target:     target,
-			Success:    err == nil,
-			Error:      err,
-			BytesFreed: target.SizeBytes,
+			Target:  target,
+			Success: err == nil,
+			Error:   err,
+		}
+		if err == nil {
+			result.BytesFreed = target.SizeBytes
 		}
 		results = append(results, result)
 		var freed int64
@@ -315,14 +327,46 @@ func (c *homebrewCleaner) Clean(ctx context.Context, targets []CleanTarget, dryR
 	return results, nil
 }
 
-func cleanupHomebrew(ctx context.Context, dryRun bool) error {
-	if dryRun {
-		return nil
+func (c *homebrewCleaner) cleanupHomebrewTarget(ctx context.Context, path string, dryRun bool) error {
+	if err := ctx.Err(); err != nil {
+		return err
 	}
+	if c.ignore != nil && c.ignore.IsIgnored(path) {
+		return fmt.Errorf("%w: on the ignore list", utils.ErrNotRemovable)
+	}
+	cachePath, err := homebrewCachePath()
+	if err != nil {
+		return err
+	}
+	if filepath.Clean(path) != cachePath {
+		return fmt.Errorf("%w: unexpected Homebrew target %q", utils.ErrNotRemovable, path)
+	}
+	return removeChildren(cachePath, dryRun)
+}
 
-	cmd := exec.CommandContext(ctx, "brew", "cleanup", "--prune=all")
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("failed to run brew cleanup: %w", err)
+func homebrewCachePath() (string, error) {
+	cmd := exec.Command("brew", "--cache")
+	output, err := cmd.Output()
+	if err != nil {
+		return "", fmt.Errorf("failed to resolve brew --cache: %w", err)
+	}
+	return filepath.Clean(strings.TrimSpace(string(output))), nil
+}
+
+// removeChildren deletes the entries inside path and leaves path itself in place.
+// The scan measured this directory, so only its contents are removed.
+func removeChildren(path string, dryRun bool) error {
+	entries, err := os.ReadDir(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return err
+	}
+	for _, ent := range entries {
+		if err := utils.SafeRemove(filepath.Join(path, ent.Name()), dryRun); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -343,7 +387,6 @@ func (c *xcodeCleaner) Scan(ctx context.Context, cfg *config.Config) ([]CleanTar
 	developer := filepath.Join(home, "Library", "Developer")
 	walks := []scantask.Walk{
 		{Root: filepath.Join(xcode, "DerivedData"), Description: "Xcode DerivedData", Safety: config.Safe},
-		{Root: filepath.Join(xcode, "Archives"), Description: "Xcode Archives", Safety: config.Moderate},
 		{Root: filepath.Join(xcode, "iOS DeviceSupport"), Description: "iOS Device Support", Safety: config.Safe},
 		{Root: filepath.Join(xcode, "watchOS DeviceSupport"), Description: "watchOS Device Support", Safety: config.Safe},
 		{Root: filepath.Join(xcode, "tvOS DeviceSupport"), Description: "tvOS Device Support", Safety: config.Safe},
@@ -351,12 +394,17 @@ func (c *xcodeCleaner) Scan(ctx context.Context, cfg *config.Config) ([]CleanTar
 		{Root: filepath.Join(xcode, "iOS Device Logs"), Description: "iOS Device Logs", Safety: config.Safe},
 	}
 
-	// Simulator data is recreated on demand, but wiping a device is not a cache flush.
+	sim := filepath.Join(developer, "CoreSimulator")
 	if cfg.CleanLevel.AllowsSafety(config.Moderate) {
-		sim := filepath.Join(developer, "CoreSimulator")
 		walks = append(walks,
 			scantask.Walk{Root: filepath.Join(sim, "Caches"), Description: "iOS Simulator caches", Safety: config.Moderate},
-			scantask.Walk{Root: filepath.Join(sim, "Devices"), Description: "iOS Simulator devices", Safety: config.Moderate},
+		)
+	}
+	// Archives and simulator devices are not rebuilt by the next compile.
+	if cfg.CleanLevel.AllowsSafety(config.Dangerous) {
+		walks = append(walks,
+			scantask.Walk{Root: filepath.Join(xcode, "Archives"), Description: "Xcode Archives", Safety: config.Dangerous},
+			scantask.Walk{Root: filepath.Join(sim, "Devices"), Description: "iOS Simulator devices", Safety: config.Dangerous},
 		)
 	}
 
@@ -366,6 +414,9 @@ func (c *xcodeCleaner) Scan(ctx context.Context, cfg *config.Config) ([]CleanTar
 type launchpadCleaner struct{ systemCleaner }
 
 func (c *launchpadCleaner) Scan(ctx context.Context, cfg *config.Config) ([]CleanTarget, error) {
+	if !cfg.CleanLevel.AllowsSafety(config.Dangerous) {
+		return nil, nil
+	}
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return nil, err

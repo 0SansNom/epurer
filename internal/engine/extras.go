@@ -62,7 +62,7 @@ func (p *PathCleaner) Clean(ctx context.Context, targets []cleaner.CleanTarget, 
 		}
 		allowed = append(allowed, t)
 	}
-	results, err := cleaner.CleanTargets(ctx, allowed, dryRun, p.progress)
+	results, err := cleaner.CleanTargets(ctx, allowed, dryRun, p.progress, p.ignore)
 	return append(results, refused...), err
 }
 

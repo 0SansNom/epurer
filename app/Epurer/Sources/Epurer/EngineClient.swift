@@ -35,6 +35,15 @@ enum ScanLevel: String, CaseIterable, Identifiable, Sendable {
         case .aggressive: return String(localized: "Agressif")
         }
     }
+
+    /// What the level includes, e.g. "Standard : sûrs et modérés".
+    var scope: String {
+        switch self {
+        case .conservative: return String(localized: "Prudent : sûrs uniquement")
+        case .standard: return String(localized: "Standard : sûrs et modérés")
+        case .aggressive: return String(localized: "Agressif : risqués compris")
+        }
+    }
 }
 
 /// Talks to the Go `epurer engine` subprocess. stdout = final JSON, stderr = NDJSON progress.
@@ -50,10 +59,12 @@ struct EngineClient: Sendable {
         if let bundled = Bundle.main.url(forAuxiliaryExecutable: "epurer-engine") {
             return bundled
         }
+        #if DEBUG
         let env = ProcessInfo.processInfo.environment["EPURER_ENGINE"]
         if let env, !env.isEmpty {
             return URL(fileURLWithPath: env)
         }
+        #endif
         // Local package layout: app/Epurer/.engine/epurer
         let packageEngine = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent() // Sources/Epurer

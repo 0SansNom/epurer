@@ -1,6 +1,14 @@
+import AppKit
 import SwiftUI
 
 extension Color {
+    /// One color per appearance: the design draws every board in light and dark.
+    init(light: Color, dark: Color) {
+        self.init(nsColor: NSColor(name: nil) { appearance in
+            appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua ? NSColor(dark) : NSColor(light)
+        })
+    }
+
     init(hex: UInt32, opacity: Double = 1) {
         self.init(
             .sRGB,
@@ -13,13 +21,25 @@ extension Color {
 }
 
 enum Palette {
-    static let ink = Color(hex: 0x2B3752)
-    static let muted = Color(hex: 0x66728A)
-    static let secondary = Color(hex: 0x5A667E)
-    static let line = Color(hex: 0x2B3752, opacity: 0.09)
+    static let ink = Color(light: Color(hex: 0x2B3752), dark: Color(hex: 0xEAF0FF))
+    static let muted = Color(light: Color(hex: 0x4A566E), dark: Color(hex: 0xA9B6D3))
+    static let secondary = muted
+    /// Separators ("·", "···") and disabled labels.
+    static let faint = Color(light: Color(hex: 0x5E6A82), dark: Color(hex: 0x8E9BB8))
+    static let line = Color(light: Color(hex: 0x2B3752, opacity: 0.09), dark: .white.opacity(0.13))
     static let accent = Color(hex: 0x5B8DE8)
-    static let link = Color(hex: 0x3F6FD0)
-    static let ground = Color(hex: 0xFCFBFF)
+    static let link = Color(light: Color(hex: 0x2F5FC0), dark: Color(hex: 0x8FB4FF))
+    /// "Supprimer" as a text action.
+    static let deleteLabel = Color(light: Color(hex: 0xB53C47), dark: Color(hex: 0xFF9AA2))
+    /// Text on amber notes ("Non monté", "déjà protégé").
+    static let amberText = Color(light: Color(hex: 0x8A5A10), dark: Color(hex: 0xF0C987))
+    /// Frosted fill inside rings and behind badges.
+    static let glass = Color(light: .white.opacity(0.6), dark: Color(red: 44 / 255, green: 56 / 255, blue: 98 / 255, opacity: 0.62))
+    /// Dialogs and floating bubbles.
+    static let surface = Color(light: .white.opacity(0.96), dark: Color(red: 27 / 255, green: 36 / 255, blue: 68 / 255, opacity: 0.97))
+    static let scrim = Color(light: Color(hex: 0x2B3752, opacity: 0.14), dark: .black.opacity(0.45))
+    static let sidebar = Color(light: .white.opacity(0.55), dark: Color(red: 14 / 255, green: 22 / 255, blue: 46 / 255, opacity: 0.55))
+    static let sidebarEdge = Color(light: Color(hex: 0x5B8DE8, opacity: 0.10), dark: .white.opacity(0.08))
 
     static let safe = Color(hex: 0x3FAE8A)
     static let moderate = Color(hex: 0xE0A94A)
@@ -42,7 +62,13 @@ enum Palette {
     )
 
     static let primary = LinearGradient(
-        colors: [Color(hex: 0x7FAEF2), Color(hex: 0x5B8DE8)],
+        colors: [Color(hex: 0x4A80E2), Color(hex: 0x2F59B8)],
+        startPoint: .topLeading,
+        endPoint: .bottomTrailing
+    )
+
+    static let destructive = LinearGradient(
+        colors: [Color(hex: 0xD0505B), Color(hex: 0xB53C47)],
         startPoint: .topLeading,
         endPoint: .bottomTrailing
     )
@@ -83,23 +109,100 @@ enum Palette {
     }
 }
 
-/// Pale peach / sky / pink washes over a near-white ground.
+/// The stylized sky behind every screen (note n11): clouds and hills where
+/// the design wants them, the gradient alone on list screens.
 struct AppBackground: View {
+    /// Clouds, hills (and stars at night). Off on Estimation, Sélection,
+    /// Explorer, Projets, Chemins protégés and their dialogs.
+    var scenery: Bool
+    @Environment(\.colorScheme) private var scheme
+
     var body: some View {
-        GeometryReader { geo in
-            let w = geo.size.width
-            ZStack {
-                Palette.ground
-                wash(Color(red: 1, green: 233 / 255, blue: 196 / 255, opacity: 0.6), at: UnitPoint(x: 0.08, y: 0), radius: w * 0.45)
-                wash(Color(red: 196 / 255, green: 224 / 255, blue: 1, opacity: 0.55), at: UnitPoint(x: 0.94, y: 0.06), radius: w * 0.45)
-                wash(Color(red: 1, green: 210 / 255, blue: 238 / 255, opacity: 0.4), at: UnitPoint(x: 0.62, y: 1.04), radius: w * 0.4)
+        let dark = scheme == .dark
+        ZStack {
+            LinearGradient(stops: stops(dark: dark), startPoint: .top, endPoint: .bottom)
+            if scenery {
+                Canvas { context, size in
+                    // The boards draw the sky on a 1120 × 720 window.
+                    context.scaleBy(x: size.width / 1120, y: size.height / 720)
+                    clouds(&context, dark: dark)
+                    hills(&context, dark: dark)
+                    if dark { stars(&context) }
+                }
             }
         }
         .ignoresSafeArea()
     }
 
-    private func wash(_ color: Color, at center: UnitPoint, radius: CGFloat) -> some View {
-        RadialGradient(colors: [color, color.opacity(0)], center: center, startRadius: 0, endRadius: radius)
+    private func stops(dark: Bool) -> [Gradient.Stop] {
+        switch (scenery, dark) {
+        case (true, false):
+            return [.init(color: Color(hex: 0xC9DFF8), location: 0), .init(color: Color(hex: 0xDCEAFB), location: 0.34),
+                    .init(color: Color(hex: 0xF4EEF6), location: 0.66), .init(color: Color(hex: 0xFFE8D8), location: 1)]
+        case (true, true):
+            return [.init(color: Color(hex: 0x0F1A33), location: 0), .init(color: Color(hex: 0x1A2648), location: 0.38),
+                    .init(color: Color(hex: 0x2A2B52), location: 0.68), .init(color: Color(hex: 0x3B2F52), location: 1)]
+        case (false, false):
+            return [.init(color: Color(hex: 0xE4EEFB), location: 0), .init(color: Color(hex: 0xF1F1FA), location: 0.55),
+                    .init(color: Color(hex: 0xFBF1EB), location: 1)]
+        case (false, true):
+            return [.init(color: Color(hex: 0x121B35), location: 0), .init(color: Color(hex: 0x182140), location: 0.55),
+                    .init(color: Color(hex: 0x211F3C), location: 1)]
+        }
+    }
+
+    private func clouds(_ context: inout GraphicsContext, dark: Bool) {
+        let fill = dark ? Color(hex: 0x6A7FC8) : .white
+        let puffs: [(CGFloat, CGFloat, CGFloat, CGFloat, Double)] = [
+            (420, 120, 150, 26, 0.85), (520, 146, 110, 20, 0.7), (900, 82, 130, 22, 0.8),
+            (1010, 250, 100, 16, 0.55), (300, 300, 90, 14, 0.45),
+        ]
+        context.drawLayer { layer in
+            layer.addFilter(.blur(radius: 16))
+            for (x, y, rx, ry, alpha) in puffs {
+                layer.fill(Path(ellipseIn: CGRect(x: x - rx, y: y - ry, width: rx * 2, height: ry * 2)),
+                           with: .color(fill.opacity(alpha)))
+            }
+        }
+    }
+
+    private func hills(_ context: inout GraphicsContext, dark: Bool) {
+        var back = Path()
+        back.move(to: CGPoint(x: 0, y: 640))
+        back.addCurve(to: CGPoint(x: 560, y: 636), control1: CGPoint(x: 180, y: 580), control2: CGPoint(x: 360, y: 600))
+        back.addCurve(to: CGPoint(x: 1120, y: 628), control1: CGPoint(x: 760, y: 672), control2: CGPoint(x: 930, y: 600))
+        back.addLine(to: CGPoint(x: 1120, y: 720)); back.addLine(to: CGPoint(x: 0, y: 720)); back.closeSubpath()
+        var front = Path()
+        front.move(to: CGPoint(x: 0, y: 676))
+        front.addCurve(to: CGPoint(x: 680, y: 676), control1: CGPoint(x: 220, y: 640), control2: CGPoint(x: 440, y: 690))
+        front.addCurve(to: CGPoint(x: 1120, y: 668), control1: CGPoint(x: 860, y: 666), control2: CGPoint(x: 990, y: 650))
+        front.addLine(to: CGPoint(x: 1120, y: 720)); front.addLine(to: CGPoint(x: 0, y: 720)); front.closeSubpath()
+
+        func shade(_ top: UInt32, _ bottom: UInt32, _ alpha: Double, from y: CGFloat) -> GraphicsContext.Shading {
+            .linearGradient(Gradient(colors: [Color(hex: top, opacity: alpha), Color(hex: bottom, opacity: alpha)]),
+                            startPoint: CGPoint(x: 0, y: y), endPoint: CGPoint(x: 0, y: 720))
+        }
+        context.drawLayer { layer in
+            layer.addFilter(.blur(radius: 3))
+            layer.fill(back, with: dark ? shade(0x1B3742, 0x152D38, 0.85, from: 580) : shade(0xBFE3D3, 0xDDF0DA, 0.85, from: 580))
+            layer.fill(front, with: dark ? shade(0x1F3F49, 0x193640, 0.95, from: 640) : shade(0xCFEBDD, 0xE6F4E2, 0.95, from: 640))
+        }
+    }
+
+    private func stars(_ context: inout GraphicsContext) {
+        let stars: [(CGFloat, CGFloat, CGFloat, Double)] = [
+            (877, 144, 1.3, 0.7), (997, 285, 0.8, 0.5), (1034, 141, 0.8, 0.35), (355, 204, 1.6, 0.35),
+            (629, 292, 0.8, 0.7), (495, 20, 1, 0.5), (526, 107, 1.6, 0.35), (1020, 50, 1, 0.7),
+            (872, 241, 1, 0.35), (241, 16, 1, 0.35), (409, 99, 1.3, 0.5), (443, 290, 1, 0.35),
+            (947, 114, 1.6, 0.5), (262, 198, 1.6, 0.35), (389, 149, 0.8, 0.5), (548, 322, 0.8, 0.7),
+            (934, 187, 0.8, 0.5), (603, 170, 1.6, 0.7), (563, 108, 1.6, 0.5), (961, 104, 0.8, 0.5),
+            (802, 228, 1.3, 0.5), (832, 18, 1.6, 0.35), (1013, 139, 1.6, 0.5), (764, 195, 1.3, 0.5),
+            (350, 315, 1.3, 0.5), (277, 235, 0.8, 0.35), (588, 276, 1.3, 0.35), (588, 155, 0.8, 0.5),
+            (942, 176, 1.3, 0.35), (1057, 54, 1, 0.7), (977, 38, 0.8, 0.7),
+        ]
+        for (x, y, r, alpha) in stars {
+            context.fill(Path(ellipseIn: CGRect(x: x - r, y: y - r, width: r * 2, height: r * 2)), with: .color(.white.opacity(alpha)))
+        }
     }
 }
 
@@ -131,7 +234,7 @@ struct ScanOrbStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.system(size: 17, weight: .bold))
-            .foregroundStyle(isEnabled ? .white : Color(hex: 0x8A94A8))
+            .foregroundStyle(isEnabled ? .white : Palette.faint)
             .frame(width: 108, height: 108)
             .background(Circle().fill(isEnabled ? AnyShapeStyle(Palette.primary) : AnyShapeStyle(Palette.ink.opacity(0.07))))
             .shadow(color: Color(hex: 0x5B8DE8, opacity: isEnabled ? 0.26 : 0), radius: 16, y: 14)
@@ -164,12 +267,8 @@ struct DangerPillStyle: ButtonStyle {
             .foregroundStyle(.white)
             .padding(.horizontal, 26)
             .frame(height: 42)
-            .background(Capsule().fill(LinearGradient(
-                colors: [Color(hex: 0xEE9AA0), Color(hex: 0xE0737B)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )))
-            .shadow(color: Color(hex: 0xE0737B, opacity: isEnabled ? 0.28 : 0), radius: 9, y: 8)
+            .background(Capsule().fill(Palette.destructive))
+            .shadow(color: Color(hex: 0xBE434E, opacity: isEnabled ? 0.30 : 0), radius: 9, y: 8)
             .opacity(isEnabled ? (configuration.isPressed ? 0.85 : 1) : 0.4)
             .contentShape(Capsule())
     }
@@ -177,14 +276,14 @@ struct DangerPillStyle: ButtonStyle {
 
 /// White pill with a blue outline ("Choisir…").
 struct SecondaryPillStyle: ButtonStyle {
-    var fill: Color = .white.opacity(0.7)
+    var fill: Color = Palette.glass
     var height: CGFloat = 44
     @Environment(\.isEnabled) private var isEnabled
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.system(size: 14, weight: .semibold))
-            .foregroundStyle(isEnabled ? Palette.link : Color(hex: 0x8A94A8))
+            .foregroundStyle(isEnabled ? Palette.link : Palette.faint)
             .padding(.horizontal, 24)
             .frame(height: height)
             .background(Capsule().fill(isEnabled ? fill : Palette.ink.opacity(0.04)))
@@ -279,6 +378,8 @@ struct StateCard<Glyph: View, Action: View>: View {
     var ring: Ring
     var title: String
     var text: String
+    /// Off on 11a, where the ring sits on the page without the card behind it.
+    var card = true
     @ViewBuilder var glyph: () -> Glyph
     @ViewBuilder var action: () -> Action
 
@@ -310,8 +411,8 @@ struct StateCard<Glyph: View, Action: View>: View {
         .padding(.top, 46)
         .padding(.horizontal, 20)
         .frame(width: 330, height: 308, alignment: .top)
-        .background(RoundedRectangle(cornerRadius: 24).fill(Palette.accent.opacity(0.035)))
-        .overlay(RoundedRectangle(cornerRadius: 24).strokeBorder(Palette.ink.opacity(0.07)))
+        .background(RoundedRectangle(cornerRadius: 24).fill(Palette.accent.opacity(card ? 0.035 : 0)))
+        .overlay(RoundedRectangle(cornerRadius: 24).strokeBorder(Palette.ink.opacity(card ? 0.07 : 0)))
     }
 }
 

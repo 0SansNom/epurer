@@ -96,7 +96,7 @@ func (m *MobileCleaner) Scan(ctx context.Context, cfg *config.Config) ([]CleanTa
 }
 
 func (m *MobileCleaner) Clean(ctx context.Context, targets []CleanTarget, dryRun bool) ([]CleanResult, error) {
-	return CleanTargets(ctx, targets, dryRun, m.progress)
+	return CleanTargets(ctx, targets, dryRun, m.progress, m.ignore)
 }
 
 // scanAndroidBuildFolders scans for Android build folders

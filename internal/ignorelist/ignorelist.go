@@ -121,14 +121,19 @@ func (l *List) Remove(path string) error {
 }
 
 // IsIgnored reports whether path is equal to, or nested under, any entry in
-// the ignore list.
+// the ignore list. Normalize failures fail closed (treated as ignored) so a
+// path we cannot reason about is never cleaned. An entry of "/" covers every
+// absolute path.
 func (l *List) IsIgnored(path string) bool {
 	norm, err := normalize(path)
 	if err != nil {
-		return false
+		return true
 	}
 
 	for _, p := range l.Paths {
+		if p == string(filepath.Separator) {
+			return true
+		}
 		if norm == p || strings.HasPrefix(norm, p+string(filepath.Separator)) {
 			return true
 		}

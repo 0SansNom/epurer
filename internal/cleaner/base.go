@@ -2,6 +2,9 @@ package cleaner
 
 import (
 	"context"
+	"fmt"
+	"os"
+	"path/filepath"
 
 	"github.com/0SansNom/epurer/internal/config"
 	"github.com/0SansNom/epurer/internal/ignorelist"
@@ -100,7 +103,10 @@ func filterIgnored(targets []CleanTarget, ignoreList *ignorelist.List) []CleanTa
 // files/directories with no special handling; a cleaner with special-cased
 // targets (e.g. DevOpsCleaner's "docker:" pseudo-paths, or the DNS and
 // Homebrew commands) implements Clean itself instead of calling this.
-func CleanTargets(ctx context.Context, targets []CleanTarget, dryRun bool, progress func(scantask.Progress)) ([]CleanResult, error) {
+//
+// Paths covered by ignore are refused (left in place), even if the host
+// supplied them after scan-time filtering.
+func CleanTargets(ctx context.Context, targets []CleanTarget, dryRun bool, progress func(scantask.Progress), ignore *ignorelist.List) ([]CleanResult, error) {
 	results := make([]CleanResult, 0, len(targets))
 	var freed int64
 
@@ -110,7 +116,10 @@ func CleanTargets(ctx context.Context, targets []CleanTarget, dryRun bool, progr
 			Success: true,
 		}
 
-		if !utils.CanRemove(target.Path) {
+		if ignore != nil && ignore.IsIgnored(target.Path) {
+			result.Success = false
+			result.Error = fmt.Errorf("%w: on the ignore list", utils.ErrNotRemovable)
+		} else if !utils.CanRemove(target.Path) {
 			result.Success = false
 			result.Error = utils.ErrNotRemovable
 		} else if !dryRun {
@@ -142,6 +151,18 @@ func CleanTargets(ctx context.Context, targets []CleanTarget, dryRun bool, progr
 	}
 
 	return results, nil
+}
+
+// siblingExists reports whether any name sits next to path.
+// A directory named build or target is only a build output when the project file is there.
+func siblingExists(path string, names ...string) bool {
+	parent := filepath.Dir(path)
+	for _, name := range names {
+		if _, err := os.Stat(filepath.Join(parent, name)); err == nil {
+			return true
+		}
+	}
+	return false
 }
 
 func noteCleanProgress(progress func(scantask.Progress), path string, done int, freed int64) {

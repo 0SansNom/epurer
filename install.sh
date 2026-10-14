@@ -47,19 +47,34 @@ else
     echo "📥 Downloading version $LATEST_VERSION..."
 
     # Download URL
-    DOWNLOAD_URL="https://github.com/$REPO/releases/download/$LATEST_VERSION/${BINARY_NAME}_${LATEST_VERSION#v}_darwin_${ARCH_NAME}.tar.gz"
+    VERSION_NUM="${LATEST_VERSION#v}"
+    ARCHIVE_NAME="${BINARY_NAME}_${VERSION_NUM}_darwin_${ARCH_NAME}.tar.gz"
+    DOWNLOAD_URL="https://github.com/$REPO/releases/download/$LATEST_VERSION/${ARCHIVE_NAME}"
+    CHECKSUMS_URL="https://github.com/$REPO/releases/download/$LATEST_VERSION/${BINARY_NAME}_${VERSION_NUM}_checksums.txt"
 
     # Download and extract
     TMP_DIR=$(mktemp -d)
     cd "$TMP_DIR"
 
-    if ! curl -sL "$DOWNLOAD_URL" -o "$BINARY_NAME.tar.gz"; then
+    if ! curl -sL "$DOWNLOAD_URL" -o "$ARCHIVE_NAME"; then
         echo "❌ Error: Failed to download release"
         rm -rf "$TMP_DIR"
         exit 1
     fi
 
-    tar -xzf "$BINARY_NAME.tar.gz"
+    if ! curl -sL "$CHECKSUMS_URL" -o "checksums.txt"; then
+        echo "❌ Error: Failed to download checksums"
+        rm -rf "$TMP_DIR"
+        exit 1
+    fi
+
+    if ! grep -E "[[:space:]]${ARCHIVE_NAME}\$" checksums.txt | shasum -a 256 -c -; then
+        echo "❌ Error: Checksum verification failed"
+        rm -rf "$TMP_DIR"
+        exit 1
+    fi
+
+    tar -xzf "$ARCHIVE_NAME"
     BINARY_PATH="$TMP_DIR/$BINARY_NAME"
 fi
 

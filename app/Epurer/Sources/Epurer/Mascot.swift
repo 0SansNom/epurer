@@ -31,7 +31,7 @@ struct BadgedMascot<Badge: View>: View {
             .overlay(alignment: .bottomTrailing) {
                 badge()
                     .frame(width: badgeSize, height: badgeSize)
-                    .background(Circle().fill(.white.opacity(0.55)))
+                    .background(Circle().fill(Palette.glass))
                     .offset(x: badgeSize * 0.3, y: badgeSize * 0.1)
             }
     }
@@ -49,7 +49,7 @@ struct ProgressRing<Center: View>: View {
 
     var body: some View {
         ZStack {
-            Circle().fill(.white.opacity(0.6))
+            Circle().fill(Palette.glass)
             Circle().stroke(Palette.accent.opacity(0.12), lineWidth: lineWidth)
             if let fraction {
                 Circle()

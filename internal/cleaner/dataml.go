@@ -91,66 +91,36 @@ func (d *DataMLCleaner) Scan(ctx context.Context, cfg *config.Config) ([]CleanTa
 		}
 	}
 
-	// .ipynb_checkpoints (Safe - automatically created)
-	checkpointTargets := d.scanPattern(ctx, ".ipynb_checkpoints")
-	targets = append(targets, checkpointTargets...)
-
-	// wandb local logs (Moderate - may contain experiment data)
-	if cfg.CleanLevel.AllowsSafety(config.Moderate) {
-		wandbTargets := d.scanPattern(ctx, "wandb")
-		for _, target := range wandbTargets {
-			// Only include if it's a wandb directory with run logs
-			if utils.PathExists(filepath.Join(target.Path, "run-*")) {
-				target.Safety = config.Moderate
-				target.Description = "W&B experiment logs"
-				targets = append(targets, target)
-			}
-		}
-	}
-
-	// MLflow artifacts (Moderate - experiment data)
-	if cfg.CleanLevel.AllowsSafety(config.Moderate) {
-		mlflowTargets := d.scanPattern(ctx, "mlruns")
-		targets = append(targets, mlflowTargets...)
-	}
-
-	// .DS_Store files (Safe)
-	dsStoreTargets := d.scanPattern(ctx, ".DS_Store")
-	targets = append(targets, dsStoreTargets...)
-
+	targets = append(targets, d.scanProjectFiles(ctx, cfg)...)
 	return targets, nil
 }
 
 func (d *DataMLCleaner) Clean(ctx context.Context, targets []CleanTarget, dryRun bool) ([]CleanResult, error) {
-	return CleanTargets(ctx, targets, dryRun, d.progress)
+	return CleanTargets(ctx, targets, dryRun, d.progress, d.ignore)
 }
 
-// scanPattern scans for a specific pattern
-func (d *DataMLCleaner) scanPattern(ctx context.Context, pattern string) []CleanTarget {
-	targets := []CleanTarget{}
-
-	resultChan := d.scanner.FindByPattern(ctx, pattern)
-	for result := range resultChan {
+// scanProjectFiles finds notebook leftovers and experiment logs in one walk.
+func (d *DataMLCleaner) scanProjectFiles(ctx context.Context, cfg *config.Config) []CleanTarget {
+	moderate := cfg.CleanLevel.AllowsSafety(config.Moderate)
+	var targets []CleanTarget
+	for result := range d.scanner.FindByPatterns(ctx, []string{".ipynb_checkpoints", "wandb", "mlruns", ".DS_Store"}) {
 		if result.Err != nil {
 			continue
 		}
-
-		desc := d.getDescriptionForPattern(pattern)
 		safety := config.Safe
-
-		// Special handling for certain patterns
-		if pattern == "wandb" || pattern == "mlruns" {
+		if result.Pattern == "wandb" || result.Pattern == "mlruns" {
+			if !moderate {
+				continue
+			}
 			safety = config.Moderate
 		}
-
 		targets = append(targets, CleanTarget{
 			Path:        result.Path,
-			Description: desc,
+			Description: d.getDescriptionForPattern(result.Pattern),
 			SizeBytes:   result.Size,
 			Safety:      safety,
 		})
 	}
-
 	return targets
 }
 

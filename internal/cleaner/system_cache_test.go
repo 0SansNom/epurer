@@ -8,6 +8,7 @@ import (
 
 	"github.com/0SansNom/epurer/internal/config"
 	"github.com/0SansNom/epurer/internal/ignorelist"
+	"github.com/0SansNom/epurer/internal/scanner"
 )
 
 func TestScanCaches_SplitsUserCacheEntries(t *testing.T) {
@@ -98,13 +99,20 @@ func TestScanXcode_SplitsDerivedDataAndArchives(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Scan() error = %v", err)
 	}
+	if len(targets) != 1 || targets[0].Description != "Xcode DerivedData: Proj" || targets[0].Safety != config.Safe {
+		t.Fatalf("standard = %+v, want derived data only", targets)
+	}
+
+	cfg := config.NewDefaultConfig()
+	cfg.CleanLevel = config.Aggressive
+	targets, err = xcodeCleaner.Scan(context.Background(), cfg)
+	if err != nil {
+		t.Fatalf("Scan() error = %v", err)
+	}
 	if len(targets) != 2 {
-		t.Fatalf("Scan() = %+v, want derived data and archives", targets)
+		t.Fatalf("aggressive = %+v, want derived data and archives", targets)
 	}
-	if targets[0].Description != "Xcode DerivedData: Proj" || targets[0].Safety != config.Safe {
-		t.Errorf("derived = %+v", targets[0])
-	}
-	if targets[1].Description != "Xcode Archives: App.xcarchive" || targets[1].Safety != config.Moderate {
+	if targets[1].Description != "Xcode Archives: App.xcarchive" || targets[1].Safety != config.Dangerous {
 		t.Errorf("archives = %+v", targets[1])
 	}
 }
@@ -115,6 +123,9 @@ func TestScanXcode_DeviceSupportAlwaysAndSimulatorsWhenModerate(t *testing.T) {
 
 	dev := filepath.Join(home, "Library", "Developer")
 	if err := os.WriteFile(mustDir(t, filepath.Join(dev, "Xcode", "iOS DeviceSupport", "16.4", "symbols")), []byte("sym"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(mustDir(t, filepath.Join(dev, "CoreSimulator", "Caches", "blob")), []byte("cache"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	if err := os.WriteFile(mustDir(t, filepath.Join(dev, "CoreSimulator", "Devices", "UDID", "device.plist")), []byte("sim"), 0o644); err != nil {
@@ -139,10 +150,22 @@ func TestScanXcode_DeviceSupportAlwaysAndSimulatorsWhenModerate(t *testing.T) {
 		t.Fatalf("Scan() error = %v", err)
 	}
 	if len(targets) != 2 {
-		t.Fatalf("standard = %+v, want device support and one simulator", targets)
+		t.Fatalf("standard = %+v, want device support and simulator caches", targets)
 	}
-	if targets[1].Description != "iOS Simulator devices: UDID" || targets[1].Safety != config.Moderate {
-		t.Errorf("simulator = %+v", targets[1])
+	if targets[1].Description != "iOS Simulator caches: blob" || targets[1].Safety != config.Moderate {
+		t.Errorf("caches = %+v", targets[1])
+	}
+
+	cfg.CleanLevel = config.Aggressive
+	targets, err = xcodeCleaner.Scan(context.Background(), cfg)
+	if err != nil {
+		t.Fatalf("Scan() error = %v", err)
+	}
+	if len(targets) != 3 {
+		t.Fatalf("aggressive = %+v, want device support, caches, and devices", targets)
+	}
+	if targets[2].Description != "iOS Simulator devices: UDID" || targets[2].Safety != config.Dangerous {
+		t.Errorf("devices = %+v", targets[2])
 	}
 }
 
@@ -560,12 +583,22 @@ func TestScanTemp_TargetsChildrenOnly(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Scan() error = %v", err)
 	}
+	if len(targets) != 0 {
+		t.Fatalf("standard = %+v, want no temp files", targets)
+	}
+
+	cfg := config.NewDefaultConfig()
+	cfg.CleanLevel = config.Aggressive
+	targets, err = NewTempFilesCleaner().Scan(context.Background(), cfg)
+	if err != nil {
+		t.Fatalf("Scan() error = %v", err)
+	}
 	for _, target := range targets {
 		parent := filepath.Dir(target.Path)
 		if parent != "/private/tmp" && parent != "/private/var/tmp" {
 			t.Errorf("target = %+v, want a child of a temp directory", target)
 		}
-		if target.Safety != config.Safe {
+		if target.Safety != config.Dangerous {
 			t.Errorf("safety = %v", target.Safety)
 		}
 	}
@@ -623,6 +656,121 @@ func TestScanIOSBackups_SplitsDevicesInAggressiveMode(t *testing.T) {
 	}
 	if len(targets) != 1 || targets[0].Description != "iOS device backups (DANGEROUS - may contain important data): DEVICE" || targets[0].Safety != config.Dangerous {
 		t.Fatalf("aggressive = %+v", targets)
+	}
+}
+
+func TestLaunchpad_OnlyAtAggressive(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	dock := filepath.Join(home, "Library", "Application Support", "Dock")
+	if err := os.MkdirAll(dock, 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	targets, err := NewLaunchpadCleaner().Scan(context.Background(), config.NewDefaultConfig())
+	if err != nil {
+		t.Fatalf("Scan() error = %v", err)
+	}
+	if len(targets) != 0 {
+		t.Fatalf("standard = %+v, want no Dock database", targets)
+	}
+
+	cfg := config.NewDefaultConfig()
+	cfg.CleanLevel = config.Aggressive
+	targets, err = NewLaunchpadCleaner().Scan(context.Background(), cfg)
+	if err != nil {
+		t.Fatalf("Scan() error = %v", err)
+	}
+	if len(targets) != 1 || targets[0].Path != dock || targets[0].Safety != config.Dangerous {
+		t.Fatalf("aggressive = %+v", targets)
+	}
+}
+
+func TestFrontend_BuildDirsNeedAProjectFile(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	root := t.TempDir()
+	if err := os.WriteFile(mustDir(t, filepath.Join(root, "Photos", "out", "pic")), []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(mustDir(t, filepath.Join(root, "app", "out", "index.html")), []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "app", "package.json"), []byte("{}"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	s, err := scanner.NewScannerWithDirs([]string{root})
+	if err != nil {
+		t.Fatal(err)
+	}
+	targets, err := (&FrontendCleaner{scanner: s}).Scan(context.Background(), config.NewDefaultConfig())
+	if err != nil {
+		t.Fatalf("Scan() error = %v", err)
+	}
+	if len(targets) != 1 || targets[0].Path != filepath.Join(root, "app", "out") || targets[0].Safety != config.Moderate {
+		t.Fatalf("Scan() = %+v, want only app/out", targets)
+	}
+}
+
+func TestBackend_TargetNeedsAProjectFileOnce(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	root := t.TempDir()
+	if err := os.WriteFile(mustDir(t, filepath.Join(root, "bare", "target", "out")), []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(mustDir(t, filepath.Join(root, "rust", "target", "debug")), []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "rust", "Cargo.toml"), []byte("[package]"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	s, err := scanner.NewScannerWithDirs([]string{root})
+	if err != nil {
+		t.Fatal(err)
+	}
+	targets, err := (&BackendCleaner{scanner: s}).Scan(context.Background(), config.NewDefaultConfig())
+	if err != nil {
+		t.Fatalf("Scan() error = %v", err)
+	}
+	if len(targets) != 1 || targets[0].Path != filepath.Join(root, "rust", "target") || targets[0].Safety != config.Moderate {
+		t.Fatalf("Scan() = %+v, want the Rust target once", targets)
+	}
+}
+
+func TestDataML_WandbLogsWithoutLiteralStar(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	root := t.TempDir()
+	if err := os.WriteFile(mustDir(t, filepath.Join(root, "proj", "wandb", "run-20240101", "log")), []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	s, err := scanner.NewScannerWithDirs([]string{root})
+	if err != nil {
+		t.Fatal(err)
+	}
+	targets, err := (&DataMLCleaner{scanner: s}).Scan(context.Background(), config.NewDefaultConfig())
+	if err != nil {
+		t.Fatalf("Scan() error = %v", err)
+	}
+	if len(targets) != 1 || targets[0].Description != "W&B experiment logs" || targets[0].Safety != config.Moderate {
+		t.Fatalf("Scan() = %+v", targets)
+	}
+}
+
+func TestRemoveChildren_LeavesTheDirectory(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "bottle"), []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := removeChildren(dir, false); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(filepath.Join(dir, "bottle")); !os.IsNotExist(err) {
+		t.Fatalf("bottle still present: %v", err)
+	}
+	if _, err := os.Stat(dir); err != nil {
+		t.Fatalf("cache directory was removed: %v", err)
 	}
 }
 

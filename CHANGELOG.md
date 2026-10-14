@@ -5,6 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.1] - 2026-10-14
+
+### Fixed
+
+- The app showed mostly English on a French Mac: French text now loads
+  for every screen.
+- Counts agree in both languages ("1 élément sur 1", "1 of 1 item") and
+  large numbers keep their thousands separator.
+- Protected Paths notes are whole sentences in both languages.
+
+### Changed
+
+- New look from the design: sky background, full dark mode (follows macOS),
+  stronger text contrast and a new Pépin.
+- Item names sent by the engine are translated in the app; the CLI stays
+  in English.
+- Result screen: "Réessayer l’échec" retries only the failed items.
+- Projects confirmation no longer offers Prévisualiser.
+
+### Security
+
+- `epurer smart` requires confirmation (or `--yes`) before deleting.
+- `install.sh` verifies release SHA-256 checksums before install.
+- Ignore list enforced at clean time for all cleaners and `engine clean`.
+- Sticky-directory ownership and ignore-path normalize failures fail closed.
+- Ignoring `/` covers all absolute children.
+- DNS / Homebrew cleaners only accept their expected target path.
+- Unknown `docker:` targets return an error instead of a false success.
+- `EPURER_ENGINE` is Debug-only; Release uses the bundled engine.
+- Safe clean preview asks for a second confirmation (`confirmFirst`).
+- GoReleaser emits SBOMs; threat model documented in `SECURITY.md`.
+
 ## [2.0.0] - 2026-10-13
 
 ### Added
@@ -93,6 +125,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ⚡ Written in Go for maximum performance
 - 🔒 Safe by default - only targets rebuildable caches
 
+[2.0.1]: https://github.com/0SansNom/epurer/releases/tag/v2.0.1
 [2.0.0]: https://github.com/0SansNom/epurer/releases/tag/v2.0.0
 [1.2.0]: https://github.com/0SansNom/epurer/releases/tag/v1.2.0
 [1.0.0]: https://github.com/0SansNom/epurer/releases/tag/v1.0.0

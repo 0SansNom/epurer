@@ -75,7 +75,7 @@ struct HomeScreen: View {
                     .buttonStyle(LinkStyle())
                     .fontWeight(.semibold)
                 if lastDate > 0 {
-                    Text("·").foregroundStyle(Palette.ink.opacity(0.25))
+                    Text("·").foregroundStyle(Palette.faint)
                     Text("Dernier nettoyage · \(Fmt.bytes(Int64(lastBytes))) · \(Self.ago.localizedString(for: Date(timeIntervalSince1970: lastDate), relativeTo: Date()))")
                         .foregroundStyle(Palette.secondary)
                 }
@@ -152,7 +152,7 @@ struct StackFooter: View {
     private func caption(_ text: String) -> some View {
         Text(text)
             .font(.system(size: 11))
-            .foregroundStyle(Color(hex: 0x7A869C))
+            .foregroundStyle(Palette.muted)
     }
 
     /// 1d · One-line detail, the only place to re-run detection.
@@ -173,9 +173,9 @@ struct StackFooter: View {
         .padding(.leading, 16)
         .padding(.trailing, 8)
         .frame(height: 40)
-        .background(Capsule().fill(.white.opacity(0.88)))
+        .background(Capsule().fill(Palette.surface))
         .overlay(Capsule().strokeBorder(Palette.ink.opacity(0.08)))
-        .shadow(color: Palette.ink.opacity(0.10), radius: 14, y: 12)
+        .shadow(color: Color(hex: 0x2B3752, opacity: 0.10), radius: 14, y: 12)
     }
 }
 
@@ -247,7 +247,8 @@ struct ScanScreen: View {
             fraction: nil,
             mood: .neutre,
             tally: model.scanTally,
-            caption: String(localized: "\(model.scanTally.items) éléments analysés"),
+            // Grouped number ("1 842") shown; the trailing count only chooses the plural form.
+            caption: String(localized: "\(Fmt.count(model.scanTally.items)) éléments analysés \(model.scanTally.items)"),
             label: String(localized: "Scan en cours"),
             buttonTitle: String(localized: "Annuler"),
             action: model.cancel
@@ -327,7 +328,7 @@ struct ReportScreen: View {
             } else {
                 BigNumber(text: approx + Fmt.bytes(model.totalBytes), size: 112)
                     .padding(.top, 30)
-                Text("Espace récupérable · \(String(localized: "\(model.targets.count) éléments"))")
+                Text("Espace récupérable · \(String(localized: "\(model.targets.count) éléments")) · \(model.level.scope)")
                     .font(.system(size: 14))
                     .foregroundStyle(Palette.muted)
                     .padding(.top, 10)
@@ -461,7 +462,7 @@ struct ReviewScreen: View {
                 }
                 .buttonStyle(LinkStyle())
                 .padding(.trailing, 18)
-                Text("\(Fmt.count(model.chosen.count)) · \(Fmt.bytes(model.chosenBytes))")
+                Text("\(String(localized: "\(model.chosen.count) sélectionnés")) · \(Fmt.bytes(model.chosenBytes))")
                     .font(.system(size: 14))
                     .foregroundStyle(Palette.muted)
                     .monospacedDigit()
@@ -548,7 +549,7 @@ struct TargetRow: View {
                 .frame(width: 18, height: 18)
 
                 VStack(alignment: .leading, spacing: 1) {
-                    Text(target.description)
+                    Text(target.label)
                         .font(.system(size: 15))
                         .lineLimit(1)
                     HStack(spacing: 0) {
@@ -578,7 +579,7 @@ struct TargetRow: View {
             .overlay(alignment: .top) { Rectangle().fill(Palette.line).frame(height: 1) }
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("\(target.description), \(Fmt.bytes(target.sizeBytes)), \(target.safetyLevel.label)")
+        .accessibilityLabel("\(target.label), \(Fmt.bytes(target.sizeBytes)), \(target.safetyLevel.label)")
         .accessibilityValue(checked ? "Sélectionné" : "Ignoré")
         .contextMenu {
             Button("Afficher dans le Finder") {
@@ -658,7 +659,7 @@ struct ConfirmColumn: View {
 
             ForEach(items.prefix(maxRows)) { item in
                 HStack {
-                    Text(item.description).lineLimit(1).truncationMode(.middle)
+                    Text(item.label).lineLimit(1).truncationMode(.middle)
                     Spacer(minLength: 12)
                     Text(Fmt.bytes(item.sizeBytes))
                         .foregroundStyle(Palette.muted)
@@ -692,11 +693,13 @@ struct CleanScreen: View {
 
     var body: some View {
         let total = model.cleanedTargets.count
+        let done = min(model.cleanTally.items, total)
         RingProgress(
             fraction: model.cleanFraction,
             mood: .concentre,
             tally: model.cleanTally,
-            caption: String(localized: "libérés · \(Fmt.count(min(model.cleanTally.items, total))) éléments sur \(Fmt.count(total))"),
+            // The two trailing counts only choose singular or plural; the catalog never prints them.
+            caption: String(localized: "libérés · \(Fmt.count(done)) éléments sur \(Fmt.count(total)) \(done) \(total)"),
             label: String(localized: "Nettoyage à \(Int(model.cleanFraction * 100)) %"),
             buttonTitle: String(localized: "Arrêter"),
             action: model.cancel
@@ -752,6 +755,15 @@ struct ResultScreen: View {
                 .buttonStyle(PrimaryPillStyle(height: 50, horizontalPadding: 44))
                 .keyboardShortcut(.defaultAction)
                 .padding(.top, 26)
+            if failed > 0 {
+                // Apple's rule for text that does not show the number: one string per case, not a plural variant.
+                Button(failed == 1 ? String(localized: "Réessayer l’échec") : String(localized: "Réessayer les échecs")) {
+                    model.retryFailed()
+                }
+                .buttonStyle(LinkStyle())
+                .fontWeight(.semibold)
+                .padding(.top, 14)
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -769,7 +781,7 @@ struct IssueRow: View {
     var body: some View {
         HStack(spacing: 14) {
             VStack(alignment: .leading, spacing: 1) {
-                Text(target?.description ?? result.path)
+                Text(target?.label ?? result.path)
                     .font(.system(size: 14))
                     .lineLimit(1)
                 Text(note)

@@ -11,6 +11,7 @@ import (
 
 	"github.com/0SansNom/epurer/internal/cleaner"
 	"github.com/0SansNom/epurer/internal/config"
+	"github.com/0SansNom/epurer/internal/ignorelist"
 	"github.com/0SansNom/epurer/internal/scantask"
 	"github.com/0SansNom/epurer/pkg/utils"
 )
@@ -68,7 +69,7 @@ func TestClean_UnknownCleaner(t *testing.T) {
 		Protocol: 1,
 		DryRun:   true,
 		Targets:  []Target{{Path: "/tmp/x", Cleaner: "Missing", Safety: "Safe"}},
-	})
+	}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -82,7 +83,7 @@ func TestClean_RejectsRelativePath(t *testing.T) {
 		Protocol: 1,
 		DryRun:   true,
 		Targets:  []Target{{Path: "relative/cache", Cleaner: "Stub", Safety: "Safe"}},
-	})
+	}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -100,7 +101,7 @@ func TestClean_RejectsProtectedPath(t *testing.T) {
 		Protocol: 1,
 		DryRun:   false,
 		Targets:  []Target{{Path: home, Cleaner: "Stub", Safety: "Safe", SizeBytes: 99}},
-	})
+	}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -128,7 +129,7 @@ func TestClean_DryRunRemovable(t *testing.T) {
 			Domain:      "System",
 			Cleaner:     "Stub",
 		}},
-	})
+	}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -137,6 +138,29 @@ func TestClean_DryRunRemovable(t *testing.T) {
 	}
 	if _, err := os.Stat(file); err != nil {
 		t.Fatal("dry-run deleted the file")
+	}
+}
+
+func TestClean_RejectsIgnoredPath(t *testing.T) {
+	dir := t.TempDir()
+	file := filepath.Join(dir, "cache")
+	if err := os.WriteFile(file, []byte("hi"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	ignore := &ignorelist.List{Paths: []string{dir}}
+	resp, err := Clean(context.Background(), []cleaner.Cleaner{&stubCleaner{name: "Trash", domain: config.DomainSystem}}, CleanRequest{
+		Protocol: 1,
+		DryRun:   false,
+		Targets:  []Target{{Path: file, Cleaner: "Trash", Safety: "Safe", SizeBytes: 2}},
+	}, ignore)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(resp.Results) != 1 || resp.Results[0].Success || resp.Results[0].Status != "left_in_place" {
+		t.Fatalf("ignored result = %#v", resp.Results)
+	}
+	if _, err := os.Stat(file); err != nil {
+		t.Fatalf("ignored path was touched: %v", err)
 	}
 }
 
@@ -152,7 +176,7 @@ func TestClean_RejectsMissingProtocol(t *testing.T) {
 		Protocol: 0,
 		DryRun:   true,
 		Targets:  nil,
-	})
+	}, nil)
 	if err == nil {
 		t.Fatal("expected error for protocol 0")
 	}
@@ -181,5 +205,5 @@ func (s *stubCleaner) Scan(context.Context, *config.Config) ([]cleaner.CleanTarg
 	return nil, nil
 }
 func (s *stubCleaner) Clean(ctx context.Context, targets []cleaner.CleanTarget, dryRun bool) ([]cleaner.CleanResult, error) {
-	return cleaner.CleanTargets(ctx, targets, dryRun, nil)
+	return cleaner.CleanTargets(ctx, targets, dryRun, nil, nil)
 }

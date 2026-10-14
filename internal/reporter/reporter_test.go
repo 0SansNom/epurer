@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"unicode/utf8"
 
 	"github.com/0SansNom/epurer/internal/cleaner"
 	"github.com/0SansNom/epurer/internal/config"
@@ -699,5 +700,16 @@ func TestPrintCleanResults_LeftInPlace(t *testing.T) {
 	}
 	if strings.Contains(output, "Failure") {
 		t.Fatalf("locked result counted as a failure: %s", output)
+	}
+}
+
+func TestTrimProgressLine_KeepsCharactersWhole(t *testing.T) {
+	line := strings.Repeat("你", 120)
+	got := trimProgressLine(line)
+	if !utf8.ValidString(got) {
+		t.Fatalf("trimmed line is not valid UTF-8: %q", got)
+	}
+	if len([]rune(got)) != 100 {
+		t.Fatalf("len = %d, want 100 runes", len([]rune(got)))
 	}
 }

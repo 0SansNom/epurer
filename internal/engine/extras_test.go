@@ -27,7 +27,7 @@ func TestClean_PathCleanerRemovesPickedPaths(t *testing.T) {
 	resp, err := Clean(context.Background(), []cleaner.Cleaner{NewPathCleaner(nil)}, CleanRequest{
 		Protocol: ProtocolVersion,
 		Targets:  []Target{{Path: victim, SizeBytes: 4, Safety: "Moderate", Cleaner: PathCleanerName}},
-	})
+	}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -50,7 +50,7 @@ func TestClean_PathCleanerLeavesIgnoredPaths(t *testing.T) {
 	resp, err := Clean(context.Background(), []cleaner.Cleaner{NewPathCleaner(ignore)}, CleanRequest{
 		Protocol: ProtocolVersion,
 		Targets:  []Target{{Path: kept, Cleaner: PathCleanerName}},
-	})
+	}, ignore)
 	if err != nil {
 		t.Fatal(err)
 	}

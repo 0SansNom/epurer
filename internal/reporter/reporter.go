@@ -459,12 +459,18 @@ func (r *Reporter) PrintScanProgress(path string, items int, bytes int64) {
 		return
 	}
 
-	line := fmt.Sprintf("  %s · %d · %s", path, items, utils.FormatBytes(bytes))
-	if len(line) > 100 {
-		line = "…" + line[len(line)-99:]
-	}
+	line := trimProgressLine(fmt.Sprintf("  %s · %d · %s", path, items, utils.FormatBytes(bytes)))
 	fmt.Printf("\r%-100s", line)
 	r.progressActive = true
+}
+
+// trimProgressLine keeps the line short without cutting a character in half.
+func trimProgressLine(line string) string {
+	runes := []rune(line)
+	if len(runes) <= 100 {
+		return line
+	}
+	return "…" + string(runes[len(runes)-99:])
 }
 
 // FinishScanProgress ends the progress line so the next report starts on a fresh row.

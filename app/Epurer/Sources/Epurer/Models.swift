@@ -131,11 +131,13 @@ extension EngineTarget {
     var domainLabel: String { Self.domainLabel(domain) }
 
     static func domainLabel(_ domain: String) -> String {
-        switch domain {
-        case "System": return "Système"
-        case "AI": return "IA"
-        default: return domain
-        }
+        domain == "System" ? String(localized: "Système") : domain
+    }
+
+    /// The engine's English description, translated through the catalog.
+    /// Paths the user picked (Explorer, Projets) keep their real file names.
+    var label: String {
+        cleaner == "paths" ? description : description.engineLocalized
     }
 
     /// Path with the home directory folded to `~`.
@@ -227,5 +229,19 @@ extension EngineTarget {
     /// A user-picked path, removed by the engine's "paths" cleaner.
     static func picked(path: String, description: String, sizeBytes: Int64, safety: String = "Moderate") -> EngineTarget {
         EngineTarget(path: path, description: description, sizeBytes: sizeBytes, safety: safety, domain: "System", cleaner: "paths")
+    }
+}
+
+extension String {
+    /// Engine names and descriptions are English (the CLI shows them as is);
+    /// the catalog holds their French. "User caches: Google" translates the
+    /// part before ": " and keeps the name. Unknown text comes back unchanged.
+    var engineLocalized: String {
+        if let colon = range(of: ": ") {
+            let prefix = String(self[..<colon.lowerBound]).engineLocalized
+            let name = String(self[colon.upperBound...])
+            return String(localized: "\(prefix): \(name)", comment: "Engine group and item, e.g. User caches: Google")
+        }
+        return String(localized: String.LocalizationValue(self))
     }
 }

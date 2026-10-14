@@ -315,66 +315,6 @@ func TestCommandExists(t *testing.T) {
 	}
 }
 
-func TestIsWritable_WritableDir(t *testing.T) {
-	tmpDir, err := os.MkdirTemp("", "iswritable-*")
-	if err != nil {
-		t.Fatalf("Failed to create temp dir: %v", err)
-	}
-	defer os.RemoveAll(tmpDir)
-
-	if !IsWritable(tmpDir) {
-		t.Errorf("IsWritable(%q) = false, want true", tmpDir)
-	}
-}
-
-func TestIsWritable_NonExistent(t *testing.T) {
-	nonExistent := "/nonexistent/path/12345"
-	if IsWritable(nonExistent) {
-		t.Errorf("IsWritable(%q) = true, want false", nonExistent)
-	}
-}
-
-func TestIsWritable_File(t *testing.T) {
-	// Create a temporary directory with a file
-	tmpDir, err := os.MkdirTemp("", "iswritable-file-*")
-	if err != nil {
-		t.Fatalf("Failed to create temp dir: %v", err)
-	}
-	defer os.RemoveAll(tmpDir)
-
-	tmpFile := filepath.Join(tmpDir, "test.txt")
-	os.WriteFile(tmpFile, []byte("test"), 0644)
-
-	// IsWritable on a file should check the parent directory
-	result := IsWritable(tmpFile)
-	// Since the parent dir is writable, this should return true
-	if !result {
-		t.Errorf("IsWritable(%q) = false, want true", tmpFile)
-	}
-}
-
-func TestIsWritable_ReadOnlyDir(t *testing.T) {
-	// Create a temporary directory
-	tmpDir, err := os.MkdirTemp("", "iswritable-readonly-*")
-	if err != nil {
-		t.Fatalf("Failed to create temp dir: %v", err)
-	}
-	defer func() {
-		// Restore permissions before cleanup
-		os.Chmod(tmpDir, 0755)
-		os.RemoveAll(tmpDir)
-	}()
-
-	// Make it read-only
-	if err := os.Chmod(tmpDir, 0555); err != nil {
-		t.Skipf("Could not set read-only permissions: %v", err)
-	}
-
-	if IsWritable(tmpDir) {
-		t.Errorf("IsWritable(read-only dir) = true, want false")
-	}
-}
-
 func TestIsProtectedPath_SymlinkToRoot(t *testing.T) {
 	dir := t.TempDir()
 	link := filepath.Join(dir, "to-root")

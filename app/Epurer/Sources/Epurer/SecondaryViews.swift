@@ -59,7 +59,7 @@ struct SafeCleanView: View {
             FlowLayout(spacing: 10) {
                 ForEach(Array(model.safeGroups.prefix(12).enumerated()), id: \.element.name) { index, group in
                     if index > 0 {
-                        Text("·").foregroundStyle(Palette.ink.opacity(0.25))
+                        Text("·").foregroundStyle(Palette.faint)
                     }
                     HStack(spacing: 4) {
                         Text(group.name)
@@ -178,7 +178,7 @@ struct PermissionView: View {
                 partialButton
                 Text("Aucun mot de passe administrateur. Rien n’est supprimé sans votre confirmation.")
                     .font(.system(size: 11))
-                    .foregroundStyle(Color(hex: 0x7A869C))
+                    .foregroundStyle(Palette.muted)
                     .padding(.top, 10)
             case .waiting:
                 Button("Rouvrir les Réglages") { model.openFullDiskAccessSettings() }
@@ -275,7 +275,7 @@ struct SettingsRowHint: View {
                 .overlay(alignment: on ? .trailing : .leading) {
                     Circle().fill(.white)
                         .frame(width: 20, height: 20)
-                        .shadow(color: Palette.ink.opacity(0.25), radius: 1.5, y: 1)
+                        .shadow(color: Color(hex: 0x2B3752, opacity: 0.25), radius: 1.5, y: 1)
                         .padding(2)
                 }
         }

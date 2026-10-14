@@ -69,25 +69,7 @@ func (b *BackendCleaner) Scan(ctx context.Context, cfg *config.Config) ([]CleanT
 		return nil, err
 	}
 
-	// __pycache__ (Safe - automatically rebuilt)
-	pycacheTargets := b.scanPattern(ctx, "__pycache__")
-	targets = append(targets, pycacheTargets...)
-
-	// .pyc files (Safe)
-	pycTargets := b.scanPattern(ctx, "*.pyc")
-	targets = append(targets, pycTargets...)
-
-	// .pytest_cache (Safe)
-	pytestTargets := b.scanPattern(ctx, ".pytest_cache")
-	targets = append(targets, pytestTargets...)
-
-	// .mypy_cache (Safe)
-	mypyTargets := b.scanPattern(ctx, ".mypy_cache")
-	targets = append(targets, mypyTargets...)
-
-	// .tox (Safe - test environments)
-	toxTargets := b.scanPattern(ctx, ".tox")
-	targets = append(targets, toxTargets...)
+	targets = append(targets, b.scanProjectFiles(ctx, cfg)...)
 
 	// pip, Poetry, and the Go build cache are top-level entries of ~/Library/Caches.
 
@@ -109,102 +91,45 @@ func (b *BackendCleaner) Scan(ctx context.Context, cfg *config.Config) ([]CleanT
 		return nil, err
 	}
 	targets = append(targets, found...)
-
-	// target folders (Java/Scala build output - Safe)
-	targetTargets := b.scanPattern(ctx, "target")
-	targets = append(targets, targetTargets...)
-
-	// Rust target folders (Moderate - build artifacts)
-	if cfg.CleanLevel.AllowsSafety(config.Moderate) {
-		rustTargetTargets := b.scanRustTargets(ctx)
-		targets = append(targets, rustTargetTargets...)
-	}
-
-	// vendor folders (Moderate - PHP dependencies)
-	if cfg.CleanLevel.AllowsSafety(config.Moderate) {
-		vendorTargets := b.scanPHPVendor(ctx)
-		targets = append(targets, vendorTargets...)
-	}
-
 	return targets, nil
 }
 
 func (b *BackendCleaner) Clean(ctx context.Context, targets []CleanTarget, dryRun bool) ([]CleanResult, error) {
-	return CleanTargets(ctx, targets, dryRun, b.progress)
+	return CleanTargets(ctx, targets, dryRun, b.progress, b.ignore)
 }
 
-// scanPattern scans for a specific pattern
-func (b *BackendCleaner) scanPattern(ctx context.Context, pattern string) []CleanTarget {
-	targets := []CleanTarget{}
-
-	resultChan := b.scanner.FindByPattern(ctx, pattern)
-	for result := range resultChan {
+// scanProjectFiles finds caches and build folders in one walk.
+// target and vendor are Moderate, and only next to their project file.
+func (b *BackendCleaner) scanProjectFiles(ctx context.Context, cfg *config.Config) []CleanTarget {
+	patterns := []string{"__pycache__", "*.pyc", ".pytest_cache", ".mypy_cache", ".tox", "target", "vendor"}
+	moderate := cfg.CleanLevel.AllowsSafety(config.Moderate)
+	var targets []CleanTarget
+	for result := range b.scanner.FindByPatterns(ctx, patterns) {
 		if result.Err != nil {
 			continue
 		}
-
-		desc := b.getDescriptionForPattern(pattern)
-
+		safety := config.Safe
+		desc := b.getDescriptionForPattern(result.Pattern)
+		switch result.Pattern {
+		case "target":
+			if !moderate || !siblingExists(result.Path, "Cargo.toml", "pom.xml", "build.sbt") {
+				continue
+			}
+			safety = config.Moderate
+		case "vendor":
+			if !moderate || !siblingExists(result.Path, "composer.json") {
+				continue
+			}
+			safety = config.Moderate
+			desc = "PHP vendor dependencies"
+		}
 		targets = append(targets, CleanTarget{
 			Path:        result.Path,
 			Description: desc,
 			SizeBytes:   result.Size,
-			Safety:      config.Safe,
+			Safety:      safety,
 		})
 	}
-
-	return targets
-}
-
-// scanRustTargets scans for Rust target folders (build output)
-func (b *BackendCleaner) scanRustTargets(ctx context.Context) []CleanTarget {
-	targets := []CleanTarget{}
-
-	resultChan := b.scanner.FindByPattern(ctx, "target")
-	for result := range resultChan {
-		if result.Err != nil {
-			continue
-		}
-
-		// Check if this is a Rust project by looking for Cargo.toml
-		parent := filepath.Dir(result.Path)
-		cargoTomlPath := filepath.Join(parent, "Cargo.toml")
-		if utils.PathExists(cargoTomlPath) {
-			targets = append(targets, CleanTarget{
-				Path:        result.Path,
-				Description: "Rust build output (target)",
-				SizeBytes:   result.Size,
-				Safety:      config.Moderate,
-			})
-		}
-	}
-
-	return targets
-}
-
-// scanPHPVendor scans for PHP vendor folders
-func (b *BackendCleaner) scanPHPVendor(ctx context.Context) []CleanTarget {
-	targets := []CleanTarget{}
-
-	resultChan := b.scanner.FindByPattern(ctx, "vendor")
-	for result := range resultChan {
-		if result.Err != nil {
-			continue
-		}
-
-		// Check if this is a PHP project by looking for composer.json
-		parent := filepath.Dir(result.Path)
-		composerJsonPath := filepath.Join(parent, "composer.json")
-		if utils.PathExists(composerJsonPath) {
-			targets = append(targets, CleanTarget{
-				Path:        result.Path,
-				Description: "PHP vendor dependencies",
-				SizeBytes:   result.Size,
-				Safety:      config.Moderate,
-			})
-		}
-	}
-
 	return targets
 }
 

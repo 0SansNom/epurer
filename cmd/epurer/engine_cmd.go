@@ -130,7 +130,7 @@ With --progress, NDJSON progress lines go to stderr; the final result stays on s
 			if progress {
 				engine.AttachProgress(cleaners, os.Stderr, "clean")
 			}
-			resp, err := engine.Clean(ctx, cleaners, req)
+			resp, err := engine.Clean(ctx, cleaners, req, ignore)
 			if err != nil {
 				return err
 			}

@@ -14,6 +14,7 @@ import (
 
 	"github.com/0SansNom/epurer/internal/cleaner"
 	"github.com/0SansNom/epurer/internal/config"
+	"github.com/0SansNom/epurer/internal/ignorelist"
 	"github.com/0SansNom/epurer/internal/scantask"
 	"github.com/0SansNom/epurer/internal/version"
 	"github.com/0SansNom/epurer/pkg/utils"
@@ -184,9 +185,9 @@ func Scan(ctx context.Context, cleaners []cleaner.Cleaner, cfg *config.Config) (
 }
 
 // Clean executes a host-supplied target list. Targets are grouped by cleaner name.
-// Each filesystem path must pass CanRemove before the cleaner runs; pseudo
-// targets (system:…, docker:…) are left to their cleaner.
-func Clean(ctx context.Context, cleaners []cleaner.Cleaner, req CleanRequest) (CleanResponse, error) {
+// Each filesystem path must pass the ignore list and CanRemove before the
+// cleaner runs; pseudo targets (system:…, docker:…) are left to their cleaner.
+func Clean(ctx context.Context, cleaners []cleaner.Cleaner, req CleanRequest, ignore *ignorelist.List) (CleanResponse, error) {
 	resp := CleanResponse{
 		Protocol: ProtocolVersion,
 		Command:  "clean",
@@ -225,6 +226,15 @@ func Clean(ctx context.Context, cleaners []cleaner.Cleaner, req CleanRequest) (C
 		}
 		targets := make([]cleaner.CleanTarget, 0, len(byCleaner[name]))
 		for _, t := range byCleaner[name] {
+			if ignore != nil && ignore.IsIgnored(t.Path) {
+				resp.Results = append(resp.Results, Result{
+					Path:    t.Path,
+					Success: false,
+					Error:   fmt.Sprintf("%s: on the ignore list", utils.ErrNotRemovable.Error()),
+					Status:  "left_in_place",
+				})
+				continue
+			}
 			if !utils.CanRemove(t.Path) {
 				resp.Results = append(resp.Results, Result{
 					Path:    t.Path,

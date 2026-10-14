@@ -226,7 +226,7 @@ final class AppModel {
     /// Safe targets grouped by the cleaner that found them, largest first.
     var safeGroups: [(name: String, bytes: Int64)] {
         Dictionary(grouping: safeTargets, by: \.cleaner)
-            .map { (name: $0.key, bytes: $0.value.reduce(0) { $0 + $1.sizeBytes }) }
+            .map { (name: $0.key.engineLocalized, bytes: $0.value.reduce(0) { $0 + $1.sizeBytes }) }
             .sorted { $0.bytes > $1.bytes }
     }
 
@@ -376,6 +376,8 @@ final class AppModel {
 
     func previewSafe() {
         openPreview(PreviewRequest(
+            confirmFirst: true,
+            question: String(localized: "Nettoyer \(safeTargets.count) éléments sûrs ?"),
             entries: safeTargets.map { PreviewEntry(target: $0) },
             actionTitle: String(localized: "Nettoyer en un geste · \(Fmt.bytes(safeBytes))"),
             onClean: { [weak self] in self?.cleanSafe() }
@@ -448,9 +450,11 @@ final class AppModel {
         }
     }
 
-    func clean(batch: [EngineTarget]? = nil, origin: CleanOrigin = .review) {
+    /// `keeping`: results of an earlier pass shown again with this one ("Réessayer l’échec").
+    func clean(batch: [EngineTarget]? = nil, origin: CleanOrigin = .review, keeping: [CleanResult] = []) {
         let batch = batch ?? chosen
         guard !batch.isEmpty else { return }
+        let earlier = cleanedTargets.filter { t in keeping.contains { $0.path == t.path } }
         preview = nil
         cleanedTargets = batch
         cleanOrigin = origin
@@ -474,8 +478,9 @@ final class AppModel {
                     }
                 }
                 guard generation == gen else { return }
-                results = response.results
-                LastClean.record(response.results)
+                results = keeping + response.results
+                cleanedTargets = earlier + batch
+                LastClean.record(results)
                 stage = .result
             } catch is CancellationError {
                 guard generation == gen else { return }
@@ -488,6 +493,14 @@ final class AppModel {
             }
             disk = DiskUsage.current()
         }
+    }
+
+    /// Runs the failed items of the last clean again, keeping the other results on screen.
+    func retryFailed() {
+        let failed = Set(results.filter { $0.status == "failed" }.map(\.path))
+        clean(batch: cleanedTargets.filter { failed.contains($0.path) },
+              origin: cleanOrigin,
+              keeping: results.filter { !failed.contains($0.path) })
     }
 
     func finish() {

@@ -75,32 +75,15 @@ func (f *FrontendCleaner) Scan(ctx context.Context, cfg *config.Config) ([]Clean
 		targets = append(targets, nodeModulesTargets...)
 	}
 
-	targets = append(targets, f.scanPattern(ctx, "dist")...)
-	targets = append(targets, f.scanPattern(ctx, "build")...)
-	targets = append(targets, f.scanPattern(ctx, "out")...)
-	targets = append(targets, f.scanPattern(ctx, ".next")...)
-
-	targets = append(targets, f.scanPattern(ctx, ".vite")...)
-	targets = append(targets, f.scanPattern(ctx, ".parcel-cache")...)
+	targets = append(targets, f.scanProjectFiles(ctx, cfg)...)
 	targets = append(targets, f.scanNestedCache(ctx, ".cache/webpack")...)
 	targets = append(targets, f.scanNestedCache(ctx, ".cache/turbo")...)
-
-	targets = append(targets, f.scanPattern(ctx, "coverage")...)
-	targets = append(targets, f.scanPattern(ctx, ".nyc_output")...)
-
-	targets = append(targets, f.scanPattern(ctx, ".eslintcache")...)
-
-	targets = append(targets, f.scanPattern(ctx, "storybook-static")...)
-
-	targets = append(targets, f.scanPattern(ctx, "npm-debug.log*")...)
-	targets = append(targets, f.scanPattern(ctx, "yarn-error.log*")...)
-	targets = append(targets, f.scanPattern(ctx, "yarn-debug.log*")...)
 
 	return targets, nil
 }
 
 func (f *FrontendCleaner) Clean(ctx context.Context, targets []CleanTarget, dryRun bool) ([]CleanResult, error) {
-	return CleanTargets(ctx, targets, dryRun, f.progress)
+	return CleanTargets(ctx, targets, dryRun, f.progress, f.ignore)
 }
 
 // scanNodeModules scans for node_modules directories
@@ -129,27 +112,41 @@ func (f *FrontendCleaner) scanNodeModules(ctx context.Context) []CleanTarget {
 	return targets
 }
 
-// scanPattern is a generic scanner for simple patterns
-func (f *FrontendCleaner) scanPattern(ctx context.Context, pattern string) []CleanTarget {
-	targets := []CleanTarget{}
-
-	resultChan := f.scanner.FindByPattern(ctx, pattern)
-	for result := range resultChan {
+// scanProjectFiles finds build outputs and caches in one walk.
+// dist, build, and out are Moderate, and only when a project file sits beside them.
+func (f *FrontendCleaner) scanProjectFiles(ctx context.Context, cfg *config.Config) []CleanTarget {
+	patterns := []string{
+		"dist", "build", "out",
+		".next", ".vite", ".parcel-cache",
+		"coverage", ".nyc_output", ".eslintcache", "storybook-static",
+		"npm-debug.log*", "yarn-error.log*", "yarn-debug.log*",
+	}
+	moderate := cfg.CleanLevel.AllowsSafety(config.Moderate)
+	var targets []CleanTarget
+	for result := range f.scanner.FindByPatterns(ctx, patterns) {
 		if result.Err != nil {
 			continue
 		}
-
-		// Determine description based on pattern
-		desc := f.getDescriptionForPattern(pattern)
-
+		safety := config.Safe
+		switch result.Pattern {
+		case "dist", "out":
+			if !moderate || !siblingExists(result.Path, "package.json") {
+				continue
+			}
+			safety = config.Moderate
+		case "build":
+			if !moderate || !siblingExists(result.Path, "package.json", "build.gradle", "build.gradle.kts", "Package.swift", "CMakeLists.txt") {
+				continue
+			}
+			safety = config.Moderate
+		}
 		targets = append(targets, CleanTarget{
 			Path:        result.Path,
-			Description: desc,
+			Description: f.getDescriptionForPattern(result.Pattern),
 			SizeBytes:   result.Size,
-			Safety:      config.Safe,
+			Safety:      safety,
 		})
 	}
-
 	return targets
 }
 

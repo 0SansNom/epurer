@@ -4,52 +4,18 @@
     "": {
       "shouldTranslate": false
     },
-    " : ce chemin est hors de portée. Inutile de le protéger.": {
+    " · non sélectionné": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": ": this path is out of reach. No need to protect it."
+            "value": " · not selected"
           }
-        }
-      }
-    },
-    " : ces chemins sont hors de portée. Inutile de les protéger.": {
-      "localizations": {
-        "en": {
+        },
+        "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": ": these paths are out of reach. No need to protect them."
-          }
-        }
-      }
-    },
-    " en fait partie.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": " is inside it."
-          }
-        }
-      }
-    },
-    " en font partie.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": " are inside it."
-          }
-        }
-      }
-    },
-    " est déjà protégé. ": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": " is already protected. "
+            "value": " · non sélectionné"
           }
         }
       }
@@ -61,6 +27,73 @@
             "state": "translated",
             "value": "%1$@ (≥ %2$@), not counted in the total"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ (≥ %@), exclus du total"
+          }
+        }
+      }
+    },
+    "%@ est déjà protégé. %@ %lld en font partie.": {
+      "comment": "Protected Paths note. The count only picks singular or plural.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ is already protected. %2$@ %#@n@"
+          },
+          "substitutions": {
+            "n": {
+              "argNum": 3,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "is inside it."
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "are inside it."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ est déjà protégé. %2$@ %#@n@"
+          },
+          "substitutions": {
+            "n": {
+              "argNum": 3,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "en fait partie."
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "en font partie."
+                    }
+                  }
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -70,6 +103,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ is now protected"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ est maintenant protégé"
           }
         }
       }
@@ -141,6 +180,12 @@
             "state": "translated",
             "value": "%1$@ left in place · %2$@"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ laissé en place · %@"
+          }
         }
       }
     },
@@ -150,6 +195,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ freed"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ libérés"
           }
         }
       }
@@ -221,6 +272,12 @@
             "state": "translated",
             "value": "%@ protected"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ protégé"
+          }
         }
       }
     },
@@ -231,6 +288,12 @@
             "state": "translated",
             "value": "%@ removed"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ retiré"
+          }
         }
       }
     },
@@ -240,6 +303,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "%1$@ deleted · %2$@ freed"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ supprimé · %@ libérés"
           }
         }
       }
@@ -254,6 +323,73 @@
             "state": "translated",
             "value": "%1$@ · %2$@"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · %@"
+          }
+        }
+      }
+    },
+    "%@ éléments analysés %lld": {
+      "comment": "Scan caption: grouped count, then the raw count that picks the plural form.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ %#@n@"
+          },
+          "substitutions": {
+            "n": {
+              "argNum": 2,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "item analyzed"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "items analyzed"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ %#@n@"
+          },
+          "substitutions": {
+            "n": {
+              "argNum": 2,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "élément analysé"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "éléments analysés"
+                    }
+                  }
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -263,6 +399,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "%1$@, %2$@"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@, %@"
           }
         }
       }
@@ -274,6 +416,29 @@
             "state": "translated",
             "value": "%1$@, %2$@, %3$@"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@, %@, %@"
+          }
+        }
+      }
+    },
+    "%@: %@": {
+      "comment": "Engine group and item, e.g. User caches: Google",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@: %2$@"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ : %2$@"
+          }
         }
       }
     },
@@ -283,6 +448,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "%lld%%"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld %%"
           }
         }
       }
@@ -487,6 +658,46 @@
         }
       }
     },
+    "%lld sélectionnés": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld selected"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld selected"
+                }
+              }
+            }
+          }
+        },
+        "fr": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld sélectionné"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld sélectionnés"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "%lld échecs": {
       "localizations": {
         "en": {
@@ -600,46 +811,6 @@
                 "stringUnit": {
                   "state": "translated",
                   "value": "%lld éléments"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "%lld éléments analysés": {
-      "localizations": {
-        "en": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld item analyzed"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld items analyzed"
-                }
-              }
-            }
-          }
-        },
-        "fr": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld élément analysé"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld éléments analysés"
                 }
               }
             }
@@ -900,6 +1071,48 @@
             "state": "translated",
             "value": "0 items selected"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "0 élément sélectionné"
+          }
+        }
+      }
+    },
+    "ASL log files": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ASL log files"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Journaux ASL"
+          }
+        }
+      }
+    },
+    "AWS CLI cache": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AWS CLI cache"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cache AWS CLI"
+          }
         }
       }
     },
@@ -909,6 +1122,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Grant Full Disk Access"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accorder l'accès complet au disque"
           }
         }
       }
@@ -920,6 +1139,12 @@
             "state": "translated",
             "value": "Home"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accueil"
+          }
         }
       }
     },
@@ -928,7 +1153,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Access granted"
+            "value": "Access enabled"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accès activé"
           }
         }
       }
@@ -940,6 +1171,12 @@
             "state": "translated",
             "value": "Full access"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accès complet"
+          }
         }
       }
     },
@@ -949,6 +1186,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Limited access"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accès limité"
           }
         }
       }
@@ -960,6 +1203,12 @@
             "state": "translated",
             "value": "Partial access"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accès partiel"
+          }
         }
       }
     },
@@ -969,6 +1218,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Access denied. Give Épurer Full Disk Access in System Settings, then try again."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accès refusé. Accordez l’accès complet au disque à Épurer dans Réglages, puis réessayez."
           }
         }
       }
@@ -980,6 +1235,12 @@
             "state": "translated",
             "value": "Actions for %@"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Actions pour %@"
+          }
         }
       }
     },
@@ -988,7 +1249,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Turn on Épurer in System Settings. macOS will then offer to reopen it."
+            "value": "Turn on Épurer in Settings. macOS will then offer to reopen it."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Activez Épurer dans les Réglages. macOS vous proposera ensuite de le rouvrir."
           }
         }
       }
@@ -1000,6 +1267,12 @@
             "state": "translated",
             "value": "Refresh"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Actualiser"
+          }
         }
       }
     },
@@ -1009,6 +1282,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Show in Finder"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Afficher dans le Finder"
           }
         }
       }
@@ -1020,6 +1299,12 @@
             "state": "translated",
             "value": "Show details"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Afficher le détail"
+          }
         }
       }
     },
@@ -1030,6 +1315,28 @@
             "state": "translated",
             "value": "Aggressive"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agressif"
+          }
+        }
+      }
+    },
+    "Agressif : risqués compris": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aggressive: risky included"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agressif : risqués compris"
+          }
         }
       }
     },
@@ -1038,7 +1345,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Add a Folder…"
+            "value": "Add a folder…"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ajouter un dossier…"
           }
         }
       }
@@ -1050,6 +1363,66 @@
             "state": "translated",
             "value": "Analyzing"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analyse en cours"
+          }
+        }
+      }
+    },
+    "Android SDK build cache": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Android SDK build cache"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cache de build du SDK Android"
+          }
+        }
+      }
+    },
+    "Android Virtual Devices": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Android Virtual Devices"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Appareils virtuels Android"
+          }
+        }
+      }
+    },
+    "Android build output": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Android build output"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sorties de build Android"
+          }
         }
       }
     },
@@ -1059,6 +1432,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Cancel"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Annuler"
           }
         }
       }
@@ -1070,6 +1449,12 @@
             "state": "translated",
             "value": "Stop"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arrêter"
+          }
         }
       }
     },
@@ -1080,6 +1465,12 @@
             "state": "translated",
             "value": "None"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aucun"
+          }
         }
       }
     },
@@ -1088,7 +1479,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "No caches at this level."
+            "value": "No cache at this level."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aucun cache à ce niveau."
           }
         }
       }
@@ -1100,6 +1497,12 @@
             "state": "translated",
             "value": "No build folders found."
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aucun dossier de build trouvé."
+          }
         }
       }
     },
@@ -1110,6 +1513,12 @@
             "state": "translated",
             "value": "No administrator password. Nothing is deleted without your confirmation."
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aucun mot de passe administrateur. Rien n’est supprimé sans votre confirmation."
+          }
         }
       }
     },
@@ -1118,7 +1527,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "No analysis yet."
+            "value": "No scan yet."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aucune analyse pour l’instant."
           }
         }
       }
@@ -1130,6 +1545,12 @@
             "state": "translated",
             "value": "No stacks detected.\nOnly system caches will be analyzed."
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aucune stack détectée.\nSeuls les caches système seront analysés."
+          }
         }
       }
     },
@@ -1139,6 +1560,120 @@
           "stringUnit": {
             "state": "translated",
             "value": "Allow Full Disk Access to get exact sizes. Without it, Épurer shows minimums."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Autorisez l’accès complet au disque pour obtenir des tailles exactes. Sans lui, Épurer affiche des minimums."
+          }
+        }
+      }
+    },
+    "Build output (build)": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Build output (build)"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sorties de build (build)"
+          }
+        }
+      }
+    },
+    "Build output (dist)": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Build output (dist)"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sorties de build (dist)"
+          }
+        }
+      }
+    },
+    "Build output (out)": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Build output (out)"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sorties de build (out)"
+          }
+        }
+      }
+    },
+    "Build output (target)": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Build output (target)"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sorties de build (target)"
+          }
+        }
+      }
+    },
+    "Bundler cache": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bundler cache"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cache Bundler"
+          }
+        }
+      }
+    },
+    "Cargo registry cache": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cargo registry cache"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Registre Cargo"
           }
         }
       }
@@ -1150,6 +1685,12 @@
             "state": "translated",
             "value": "This user can’t delete it"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cet utilisateur ne peut pas le supprimer"
+          }
         }
       }
     },
@@ -1158,7 +1699,31 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "This copy of Épurer is incomplete. Rebuild the app to repair it."
+            "value": "This build of Épurer is incomplete. Rebuild the app to fix it."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cette version d’Épurer est incomplète. Reconstruisez l’app pour la réparer."
+          }
+        }
+      }
+    },
+    "ChatGPT desktop cache": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ChatGPT desktop cache"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cache de ChatGPT"
           }
         }
       }
@@ -1170,6 +1735,12 @@
             "state": "translated",
             "value": "Protected path"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chemin protégé"
+          }
         }
       }
     },
@@ -1179,6 +1750,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Protected Paths"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chemins protégés"
           }
         }
       }
@@ -1190,6 +1767,12 @@
             "state": "translated",
             "value": "Looks for node_modules, target, .venv, Pods…"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cherche node_modules, target, .venv, Pods…"
+          }
         }
       }
     },
@@ -1198,7 +1781,31 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Choose a Folder…"
+            "value": "Choose a folder…"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choisir un dossier…"
+          }
+        }
+      }
+    },
+    "Claude desktop application cache": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Claude desktop application cache"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cache de l’app Claude"
           }
         }
       }
@@ -1210,6 +1817,12 @@
             "state": "translated",
             "value": "Check everything except risky items"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cocher tout sauf les éléments risqués"
+          }
         }
       }
     },
@@ -1218,7 +1831,85 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Check at least one row."
+            "value": "Select at least one row."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cochez au moins une ligne."
+          }
+        }
+      }
+    },
+    "Composer cache": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Composer cache"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cache Composer"
+          }
+        }
+      }
+    },
+    "Conda environments tarball cache": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conda environments tarball cache"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Archives d’environnements Conda"
+          }
+        }
+      }
+    },
+    "Conda package cache": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conda package cache"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cache des paquets Conda"
+          }
+        }
+      }
+    },
+    "Continue.dev index cache": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue.dev index cache"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Index de Continue.dev"
           }
         }
       }
@@ -1228,7 +1919,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Continue with Partial Access"
+            "value": "Continue with partial access"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continuer avec un accès partiel"
           }
         }
       }
@@ -1240,6 +1937,12 @@
             "state": "translated",
             "value": "Copy"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copier"
+          }
         }
       }
     },
@@ -1249,6 +1952,102 @@
           "stringUnit": {
             "state": "translated",
             "value": "Copied"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copié"
+          }
+        }
+      }
+    },
+    "Cursor application cache": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cursor application cache"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cache de l’app Cursor"
+          }
+        }
+      }
+    },
+    "Cursor cache": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cursor cache"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cache Cursor"
+          }
+        }
+      }
+    },
+    "Cursor cached data": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cursor cached data"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Données en cache de Cursor"
+          }
+        }
+      }
+    },
+    "DNS Cache": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "DNS Cache"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cache DNS"
+          }
+        }
+      }
+    },
+    "DNS cache (via dscacheutil)": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "DNS cache (via dscacheutil)"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cache DNS (via dscacheutil)"
           }
         }
       }
@@ -1260,6 +2059,12 @@
             "state": "translated",
             "value": "Last clean · %1$@ · %2$@"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dernier nettoyage · %@ · %@"
+          }
         }
       }
     },
@@ -1269,6 +2074,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Disk"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disque"
           }
         }
       }
@@ -1280,6 +2091,12 @@
             "state": "translated",
             "value": "Disk used · %1$@ of %2$@"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disque utilisé · %@ sur %@"
+          }
         }
       }
     },
@@ -1289,6 +2106,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Disk used · %1$@ of %2$@ · %3$lld%%"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disque utilisé · %@ sur %@ · %lld %%"
           }
         }
       }
@@ -1300,6 +2123,84 @@
             "state": "translated",
             "value": "Disk %lld%% used"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disque utilisé à %lld %%"
+          }
+        }
+      }
+    },
+    "Docker build cache": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Docker build cache"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cache de build Docker"
+          }
+        }
+      }
+    },
+    "Docker dangling images": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Docker dangling images"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Images Docker orphelines"
+          }
+        }
+      }
+    },
+    "Docker stopped containers": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Docker stopped containers"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conteneurs Docker arrêtés"
+          }
+        }
+      }
+    },
+    "Docker unused volumes (DANGEROUS - may contain data)": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Docker unused volumes (DANGEROUS - may contain data)"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Volumes Docker inutilisés (RISQUÉ : peuvent contenir des données)"
+          }
         }
       }
     },
@@ -1308,7 +2209,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Empty Folder"
+            "value": "Empty folder"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dossier vide"
           }
         }
       }
@@ -1320,6 +2227,12 @@
             "state": "translated",
             "value": "Detecting stacks…"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Détection des stacks…"
+          }
         }
       }
     },
@@ -1330,6 +2243,30 @@
             "state": "translated",
             "value": "Finding safe items"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Détection des éléments sûrs en cours"
+          }
+        }
+      }
+    },
+    "ESLint cache": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ESLint cache"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cache ESLint"
+          }
         }
       }
     },
@@ -1338,17 +2275,29 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Waiting for access"
+            "value": "Waiting for activation"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En attente de l’activation"
           }
         }
       }
     },
-    "Espace récupérable · %@": {
+    "Espace récupérable · %@ · %@": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Reclaimable space · %@"
+            "value": "Reclaimable space · %1$@ · %2$@"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Espace récupérable · %@ · %@"
           }
         }
       }
@@ -1360,6 +2309,12 @@
             "state": "translated",
             "value": "Estimating…"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Estimation en cours…"
+          }
         }
       }
     },
@@ -1369,6 +2324,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Review"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Examiner"
           }
         }
       }
@@ -1383,6 +2344,66 @@
             "state": "translated",
             "value": "Close"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fermer"
+          }
+        }
+      }
+    },
+    "Flutter build output": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Flutter build output"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sorties de build Flutter"
+          }
+        }
+      }
+    },
+    "Flutter/Dart build cache": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Flutter/Dart build cache"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cache de build Flutter/Dart"
+          }
+        }
+      }
+    },
+    "GitHub Copilot cache": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub Copilot cache"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cache GitHub Copilot"
+          }
         }
       }
     },
@@ -1392,6 +2413,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Drag a folder here."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Glissez un dossier ici."
           }
         }
       }
@@ -1403,6 +2430,102 @@
             "state": "translated",
             "value": "GB"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Go"
+          }
+        }
+      }
+    },
+    "Go module cache": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Go module cache"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cache des modules Go"
+          }
+        }
+      }
+    },
+    "Gradle cache": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gradle cache"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cache Gradle"
+          }
+        }
+      }
+    },
+    "Helm cache": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Helm cache"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cache Helm"
+          }
+        }
+      }
+    },
+    "Homebrew Cache": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Homebrew Cache"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cache Homebrew"
+          }
+        }
+      }
+    },
+    "Homebrew cache": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Homebrew cache"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cache Homebrew"
+          }
         }
       }
     },
@@ -1412,6 +2535,30 @@
           "stringUnit": {
             "state": "translated",
             "value": "Not counted: this user can’t delete them."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hors total : cet utilisateur ne peut pas les supprimer."
+          }
+        }
+      }
+    },
+    "Hugging Face cache": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hugging Face cache"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cache Hugging Face"
           }
         }
       }
@@ -1423,6 +2570,12 @@
             "state": "translated",
             "value": "Skipped"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ignoré"
+          }
         }
       }
     },
@@ -1432,6 +2585,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Skipped by every scan and clean."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ignorés par tous les scans et nettoyages."
           }
         }
       }
@@ -1443,6 +2602,12 @@
             "state": "translated",
             "value": "Épurer switch to turn on in Full Disk Access"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Interrupteur Épurer à activer dans l’accès complet au disque"
+          }
         }
       }
     },
@@ -1452,6 +2617,102 @@
           "stringUnit": {
             "state": "translated",
             "value": "Not found"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Introuvable"
+          }
+        }
+      }
+    },
+    "Jupyter kernels cache": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jupyter kernels cache"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cache des noyaux Jupyter"
+          }
+        }
+      }
+    },
+    "Jupyter notebook checkpoints": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jupyter notebook checkpoints"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Points de sauvegarde Jupyter"
+          }
+        }
+      }
+    },
+    "Jupyter runtime files": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jupyter runtime files"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fichiers d’exécution Jupyter"
+          }
+        }
+      }
+    },
+    "Keras/TensorFlow datasets cache": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keras/TensorFlow datasets cache"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jeux de données Keras/TensorFlow"
+          }
+        }
+      }
+    },
+    "Keras/TensorFlow models cache": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keras/TensorFlow models cache"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modèles Keras/TensorFlow"
           }
         }
       }
@@ -1463,6 +2724,30 @@
             "state": "translated",
             "value": "kB"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ko"
+          }
+        }
+      }
+    },
+    "Kubernetes cache": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kubernetes cache"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cache Kubernetes"
+          }
         }
       }
     },
@@ -1471,7 +2756,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Protection stays on when the volume comes back."
+            "value": "Protection stays active when the volume comes back."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La protection reste active au retour du volume."
           }
         }
       }
@@ -1483,6 +2774,12 @@
             "state": "translated",
             "value": "Left in place"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Laissé en place"
+          }
         }
       }
     },
@@ -1492,6 +2789,48 @@
           "stringUnit": {
             "state": "translated",
             "value": "Left aside: %@"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Laissés de côté : %@"
+          }
+        }
+      }
+    },
+    "Launchpad Database": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Launchpad Database"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Base du Launchpad"
+          }
+        }
+      }
+    },
+    "Launchpad database (will be rebuilt)": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Launchpad database (will be rebuilt)"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Base du Launchpad (reconstruite ensuite)"
           }
         }
       }
@@ -1503,6 +2842,12 @@
             "state": "translated",
             "value": "Source code stays untouched."
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le code source reste intact."
+          }
         }
       }
     },
@@ -1511,7 +2856,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The analysis engine is missing"
+            "value": "The scan engine can’t be found"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le moteur d’analyse est introuvable"
           }
         }
       }
@@ -1523,6 +2874,12 @@
             "state": "translated",
             "value": "The engine stopped (%1$d): %2$@"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le moteur s’est arrêté (%d) : %@"
+          }
         }
       }
     },
@@ -1531,7 +2888,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Sorting by size happens once measuring is done."
+            "value": "Sorting by size happens when measuring ends."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le tri par taille se fait à la fin de la mesure."
           }
         }
       }
@@ -1543,6 +2906,12 @@
             "state": "translated",
             "value": "Reading "
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lecture de "
+          }
         }
       }
     },
@@ -1553,11 +2922,71 @@
             "state": "translated",
             "value": "Freed"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Libérés"
+          }
+        }
+      }
+    },
+    "MLflow experiment runs": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MLflow experiment runs"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Exécutions MLflow"
+          }
         }
       }
     },
     "Macintosh HD": {
       "shouldTranslate": false
+    },
+    "Mamba/Miniforge package cache": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mamba/Miniforge package cache"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cache des paquets Mamba/Miniforge"
+          }
+        }
+      }
+    },
+    "Maven local repository": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maven local repository"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dépôt local Maven"
+          }
+        }
+      }
     },
     "Mesure des tailles… %@ sur %@": {
       "localizations": {
@@ -1565,6 +2994,30 @@
           "stringUnit": {
             "state": "translated",
             "value": "Measuring sizes… %1$@ of %2$@"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mesure des tailles… %@ sur %@"
+          }
+        }
+      }
+    },
+    "Minikube": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Minikube"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Minikube"
           }
         }
       }
@@ -1576,6 +3029,12 @@
             "state": "translated",
             "value": "MB"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mo"
+          }
         }
       }
     },
@@ -1585,6 +3044,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Moderate"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modéré"
           }
         }
       }
@@ -1596,6 +3061,12 @@
             "state": "translated",
             "value": "Moderate"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modérés"
+          }
         }
       }
     },
@@ -1605,6 +3076,30 @@
           "stringUnit": {
             "state": "translated",
             "value": "Engine not found. Run “make app-bundle” again (expected: %@)."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Moteur introuvable. Relancez « make app-bundle » (attendu : %@)."
+          }
+        }
+      }
+    },
+    "NYC coverage output": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "NYC coverage output"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couverture NYC"
           }
         }
       }
@@ -1616,6 +3111,12 @@
             "state": "translated",
             "value": "Cleaning build artifacts…"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nettoyage des artefacts…"
+          }
         }
       }
     },
@@ -1625,6 +3126,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Clean interrupted. Your previous selection is still there."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nettoyage interrompu. La sélection précédente est toujours là."
           }
         }
       }
@@ -1636,6 +3143,12 @@
             "state": "translated",
             "value": "Safe Clean"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nettoyage sûr"
+          }
         }
       }
     },
@@ -1645,6 +3158,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Safe Clean ›"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nettoyage sûr ›"
           }
         }
       }
@@ -1656,6 +3175,12 @@
             "state": "translated",
             "value": "Cleaning %lld%%"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nettoyage à %lld %%"
+          }
         }
       }
     },
@@ -1665,6 +3190,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Cleaning… · %1$@ · %2$@"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nettoyage… · %@ · %@"
           }
         }
       }
@@ -1676,6 +3207,12 @@
             "state": "translated",
             "value": "Clean"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nettoyer"
+          }
         }
       }
     },
@@ -1686,6 +3223,12 @@
             "state": "translated",
             "value": "Clean %@"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nettoyer %@"
+          }
         }
       }
     },
@@ -1695,6 +3238,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Clean %1$@ · %2$@"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nettoyer %@ · %@"
           }
         }
       }
@@ -1779,12 +3328,58 @@
         }
       }
     },
+    "Nettoyer %lld éléments sûrs ?": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Clean %lld safe item?"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Clean %lld safe items?"
+                }
+              }
+            }
+          }
+        },
+        "fr": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Nettoyer %lld élément sûr ?"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Nettoyer %lld éléments sûrs ?"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Nettoyer 0": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Clean 0"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nettoyer 0"
           }
         }
       }
@@ -1794,7 +3389,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Clean in One Step"
+            "value": "Clean in one go"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nettoyer en un geste"
           }
         }
       }
@@ -1804,7 +3405,31 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Clean in One Step · %@"
+            "value": "Clean in one go · %@"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nettoyer en un geste · %@"
+          }
+        }
+      }
+    },
+    "Next.js build cache": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next.js build cache"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cache de build Next.js"
           }
         }
       }
@@ -1815,6 +3440,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Not mounted"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Non monté"
           }
         }
       }
@@ -1829,6 +3460,12 @@
             "state": "translated",
             "value": "Open %@"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ouvrir %@"
+          }
         }
       }
     },
@@ -1837,7 +3474,49 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Open System Settings"
+            "value": "Open Settings"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ouvrir les Réglages"
+          }
+        }
+      }
+    },
+    "PHP vendor dependencies": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PHP vendor dependencies"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dépendances PHP (vendor)"
+          }
+        }
+      }
+    },
+    "Parcel cache": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Parcel cache"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cache Parcel"
           }
         }
       }
@@ -1849,6 +3528,12 @@
             "state": "translated",
             "value": "Switch to %@"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Passer en %@"
+          }
         }
       }
     },
@@ -1858,6 +3543,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Progress"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Progression"
           }
         }
       }
@@ -1869,6 +3560,12 @@
             "state": "translated",
             "value": "Projects"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Projets"
+          }
         }
       }
     },
@@ -1879,6 +3576,12 @@
             "state": "translated",
             "value": "Protect"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Protéger"
+          }
         }
       }
     },
@@ -1887,7 +3590,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Protect This Path"
+            "value": "Protect this path"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Protéger ce chemin"
           }
         }
       }
@@ -1899,6 +3608,28 @@
             "state": "translated",
             "value": "Cautious"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prudent"
+          }
+        }
+      }
+    },
+    "Prudent : sûrs uniquement": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cautious: safe only"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prudent : sûrs uniquement"
+          }
         }
       }
     },
@@ -1908,6 +3639,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Preview · nothing is deleted"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prévisualisation · rien n’est supprimé"
           }
         }
       }
@@ -1919,6 +3656,12 @@
             "state": "translated",
             "value": "Preview"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prévisualiser"
+          }
         }
       }
     },
@@ -1927,7 +3670,67 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ready to Scan"
+            "value": "Ready to scan"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prêt à scanner"
+          }
+        }
+      }
+    },
+    "PyTorch Hub cache": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PyTorch Hub cache"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cache PyTorch Hub"
+          }
+        }
+      }
+    },
+    "Python bytecode cache": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Python bytecode cache"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cache bytecode Python"
+          }
+        }
+      }
+    },
+    "Python compiled files": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Python compiled files"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fichiers Python compilés"
           }
         }
       }
@@ -1939,6 +3742,12 @@
             "state": "translated",
             "value": "Pépin, Épurer’s mascot"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pépin, mascotte d'Épurer"
+          }
         }
       }
     },
@@ -1947,7 +3756,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Searching for projects in %1$@ folders… %#@n@"
+            "value": "Looking for projects in %1$@ folders… %#@n@"
           },
           "substitutions": {
             "n": {
@@ -2007,7 +3816,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Searching for projects in %1$@ and %2$@… %#@n@"
+            "value": "Looking for projects in %1$@ and %2$@… %#@n@"
           },
           "substitutions": {
             "n": {
@@ -2067,7 +3876,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Searching for projects in %1$@… %#@n@"
+            "value": "Looking for projects in %1$@… %#@n@"
           },
           "substitutions": {
             "n": {
@@ -2169,6 +3978,12 @@
             "state": "translated",
             "value": "Release to protect"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Relâchez pour protéger"
+          }
         }
       }
     },
@@ -2177,7 +3992,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Go Up"
+            "value": "Up"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remonter"
           }
         }
       }
@@ -2187,7 +4008,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Scan Again"
+            "value": "Rescan"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rescanner"
           }
         }
       }
@@ -2199,6 +4026,12 @@
             "state": "translated",
             "value": "Remove"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Retirer"
+          }
         }
       }
     },
@@ -2209,6 +4042,12 @@
             "state": "translated",
             "value": "Nothing is protected"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rien n’est protégé"
+          }
         }
       }
     },
@@ -2217,7 +4056,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Nothing Found"
+            "value": "Nothing found"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rien trouvé"
           }
         }
       }
@@ -2229,6 +4074,12 @@
             "state": "translated",
             "value": "Nothing to measure here."
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rien à mesurer ici."
+          }
         }
       }
     },
@@ -2238,6 +4089,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nothing to clean."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rien à nettoyer."
           }
         }
       }
@@ -2249,6 +4106,12 @@
             "state": "translated",
             "value": "Risky"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risqué"
+          }
         }
       }
     },
@@ -2259,6 +4122,12 @@
             "state": "translated",
             "value": "Risky"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risqués"
+          }
         }
       }
     },
@@ -2267,7 +4136,63 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Reopen System Settings"
+            "value": "Reopen Settings"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rouvrir les Réglages"
+          }
+        }
+      }
+    },
+    "Ruby gem cache": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ruby gem cache"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cache des gems Ruby"
+          }
+        }
+      }
+    },
+    "Réessayer les échecs": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Retry the failures"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Réessayer les échecs"
+          }
+        }
+      }
+    },
+    "Réessayer l’échec": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Retry the failure"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Réessayer l’échec"
           }
         }
       }
@@ -2279,6 +4204,12 @@
             "state": "translated",
             "value": "System Settings › Privacy & Security › Full Disk Access"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Réglages Système › Confidentialité et sécurité › Accès complet au disque"
+          }
         }
       }
     },
@@ -2288,6 +4219,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Unreadable engine response: %@"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Réponse du moteur illisible : %@"
           }
         }
       }
@@ -2299,6 +4236,12 @@
             "state": "translated",
             "value": "Reveal"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Révéler"
+          }
         }
       }
     },
@@ -2308,6 +4251,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Reveal in Finder"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Révéler dans le Finder"
           }
         }
       }
@@ -2319,6 +4268,12 @@
             "state": "translated",
             "value": "Without Full Disk Access, some sizes are underestimated."
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sans accès complet au disque, certaines tailles sont sous-estimées."
+          }
         }
       }
     },
@@ -2328,6 +4283,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Scanning"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scan en cours"
           }
         }
       }
@@ -2339,11 +4300,51 @@
             "state": "translated",
             "value": "Scan"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scanner"
+          }
         }
       }
     },
     "Standard": {
       "shouldTranslate": false
+    },
+    "Standard : sûrs et modérés": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Standard: safe and moderate"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Standard : sûrs et modérés"
+          }
+        }
+      }
+    },
+    "Storybook static build": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Storybook static build"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Build statique Storybook"
+          }
+        }
+      }
     },
     "Suppression définitive": {
       "localizations": {
@@ -2351,6 +4352,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Permanent deletion"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Suppression définitive"
           }
         }
       }
@@ -2362,6 +4369,12 @@
             "state": "translated",
             "value": "Permanent deletion."
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Suppression définitive."
+          }
         }
       }
     },
@@ -2371,6 +4384,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Delete"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Supprimer"
           }
         }
       }
@@ -2382,6 +4401,12 @@
             "state": "translated",
             "value": "Delete “%@”?"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Supprimer « %@ » ?"
+          }
         }
       }
     },
@@ -2391,6 +4416,100 @@
           "stringUnit": {
             "state": "translated",
             "value": "Delete…"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Supprimer…"
+          }
+        }
+      }
+    },
+    "System Caches": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "System Caches"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Caches système"
+          }
+        }
+      }
+    },
+    "System Logs": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "System Logs"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Journaux système"
+          }
+        }
+      }
+    },
+    "System caches": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "System caches"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Caches système"
+          }
+        }
+      }
+    },
+    "System log files": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "System log files"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Journaux système"
+          }
+        }
+      }
+    },
+    "Système": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "System"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Système"
           }
         }
       }
@@ -2402,6 +4521,12 @@
             "state": "translated",
             "value": "Selection"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sélection"
+          }
         }
       }
     },
@@ -2411,6 +4536,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Selected"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sélectionné"
           }
         }
       }
@@ -2422,6 +4553,12 @@
             "state": "translated",
             "value": "Safe"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sûr"
+          }
         }
       }
     },
@@ -2431,6 +4568,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Safe"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sûrs"
           }
         }
       }
@@ -2442,6 +4585,12 @@
             "state": "translated",
             "value": "Measuring size"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Taille en cours de mesure"
+          }
         }
       }
     },
@@ -2451,6 +4600,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Minimum size: some subfolders can’t be read without Full Disk Access."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Taille minimale : certains sous-dossiers sont illisibles sans accès complet au disque."
           }
         }
       }
@@ -2462,6 +4617,30 @@
             "state": "translated",
             "value": "Minimum sizes"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tailles minimales"
+          }
+        }
+      }
+    },
+    "Temp Files": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Temp Files"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fichiers temporaires"
+          }
         }
       }
     },
@@ -2471,6 +4650,48 @@
           "stringUnit": {
             "state": "translated",
             "value": "Done"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Terminé"
+          }
+        }
+      }
+    },
+    "Terraform providers and modules": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Terraform providers and modules"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fournisseurs et modules Terraform"
+          }
+        }
+      }
+    },
+    "Test coverage reports": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Test coverage reports"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rapports de couverture de tests"
           }
         }
       }
@@ -2482,6 +4703,12 @@
             "state": "translated",
             "value": "TB"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To"
+          }
         }
       }
     },
@@ -2492,6 +4719,12 @@
             "state": "translated",
             "value": "All"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tout"
+          }
         }
       }
     },
@@ -2500,7 +4733,31 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "All Clean"
+            "value": "All clean"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tout est propre"
+          }
+        }
+      }
+    },
+    "Trash": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trash"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Corbeille"
           }
         }
       }
@@ -2512,6 +4769,12 @@
             "state": "translated",
             "value": "Sorted by size · %1$@%2$@"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Triés par taille · %@%@"
+          }
         }
       }
     },
@@ -2522,6 +4785,102 @@
             "state": "translated",
             "value": "Found"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trouvé"
+          }
+        }
+      }
+    },
+    "User caches": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "User caches"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Caches utilisateur"
+          }
+        }
+      }
+    },
+    "User logs": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "User logs"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Journaux utilisateur"
+          }
+        }
+      }
+    },
+    "User trash": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "User trash"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Corbeille"
+          }
+        }
+      }
+    },
+    "Vagrant boxes": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vagrant boxes"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Boîtes Vagrant"
+          }
+        }
+      }
+    },
+    "Vite cache": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vite cache"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cache Vite"
+          }
         }
       }
     },
@@ -2530,7 +4889,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "See All Your Caches"
+            "value": "See all your caches"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voir tous vos caches"
           }
         }
       }
@@ -2542,6 +4907,138 @@
             "state": "translated",
             "value": "Checking each item…"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vérification de chaque élément…"
+          }
+        }
+      }
+    },
+    "W&B experiment logs": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "W&B experiment logs"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Journaux d’expériences W&B"
+          }
+        }
+      }
+    },
+    "Weights & Biases cache": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weights & Biases cache"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cache Weights & Biases"
+          }
+        }
+      }
+    },
+    "Xcode Archives": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xcode Archives"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Archives Xcode"
+          }
+        }
+      }
+    },
+    "Xcode DerivedData": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xcode DerivedData"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xcode DerivedData"
+          }
+        }
+      }
+    },
+    "Yarn cache": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yarn cache"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cache Yarn"
+          }
+        }
+      }
+    },
+    "Yarn debug logs": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yarn debug logs"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Journaux de débogage Yarn"
+          }
+        }
+      }
+    },
+    "Yarn error logs": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yarn error logs"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Journaux d’erreurs Yarn"
+          }
         }
       }
     },
@@ -2552,15 +5049,252 @@
             "state": "translated",
             "value": "unknown error"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "erreur inconnue"
+          }
         }
       }
     },
-    "libérés · %@ éléments sur %@": {
+    "iOS Backups": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "freed · %1$@ of %2$@ items"
+            "value": "iOS Backups"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sauvegardes iOS"
+          }
+        }
+      }
+    },
+    "iOS Device Logs": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iOS Device Logs"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Journaux des appareils iOS"
+          }
+        }
+      }
+    },
+    "iOS Device Support": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iOS Device Support"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prise en charge des appareils iOS"
+          }
+        }
+      }
+    },
+    "iOS Simulator caches": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iOS Simulator caches"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Caches du simulateur iOS"
+          }
+        }
+      }
+    },
+    "iOS Simulator devices": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iOS Simulator devices"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Appareils du simulateur iOS"
+          }
+        }
+      }
+    },
+    "iOS device backups (DANGEROUS - may contain important data)": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iOS device backups (DANGEROUS - may contain important data)"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sauvegardes d’appareils iOS (RISQUÉ : peuvent contenir des données importantes)"
+          }
+        }
+      }
+    },
+    "libérés · %@ éléments sur %@ %lld %lld": {
+      "comment": "Clean caption: grouped done and total, then the raw counts. French agrees with done, English with total.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "freed · %1$@ of %2$@ %#@n@"
+          },
+          "substitutions": {
+            "n": {
+              "argNum": 4,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "item"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "items"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "libérés · %1$@ %#@n@ sur %2$@"
+          },
+          "substitutions": {
+            "n": {
+              "argNum": 3,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "élément"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "éléments"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "macOS Device Support": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS Device Support"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prise en charge des appareils macOS"
+          }
+        }
+      }
+    },
+    "macOS metadata files": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS metadata files"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fichiers de métadonnées macOS"
+          }
+        }
+      }
+    },
+    "mypy type checker cache": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "mypy type checker cache"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cache mypy"
+          }
+        }
+      }
+    },
+    "node_modules dependencies": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "node_modules dependencies"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dépendances node_modules"
           }
         }
       }
@@ -2572,6 +5306,12 @@
             "state": "translated",
             "value": "not selected"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "non sélectionné"
+          }
         }
       }
     },
@@ -2581,6 +5321,48 @@
           "stringUnit": {
             "state": "translated",
             "value": "not selected"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "non sélectionnés"
+          }
+        }
+      }
+    },
+    "npm cache": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "npm cache"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cache npm"
+          }
+        }
+      }
+    },
+    "npm debug logs": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "npm debug logs"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Journaux de débogage npm"
           }
         }
       }
@@ -2592,6 +5374,30 @@
             "state": "translated",
             "value": "B"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "o"
+          }
+        }
+      }
+    },
+    "pnpm store": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "pnpm store"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Magasin pnpm"
+          }
         }
       }
     },
@@ -2601,6 +5407,30 @@
           "stringUnit": {
             "state": "translated",
             "value": "protected"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "protégé"
+          }
+        }
+      }
+    },
+    "pytest cache": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "pytest cache"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cache pytest"
           }
         }
       }
@@ -2612,6 +5442,12 @@
             "state": "translated",
             "value": "would be freed"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "seraient libérés"
+          }
         }
       }
     },
@@ -2621,6 +5457,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "will be freed"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "seront libérés"
           }
         }
       }
@@ -2632,6 +5474,12 @@
             "state": "translated",
             "value": "will be freed · permanent deletion"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "seront libérés · suppression définitive"
+          }
         }
       }
     },
@@ -2642,6 +5490,48 @@
             "state": "translated",
             "value": "will be freed · permanent deletion, Trash included"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "seront libérés · suppression définitive, Corbeille comprise"
+          }
+        }
+      }
+    },
+    "tox test environments": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "tox test environments"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Environnements de test tox"
+          }
+        }
+      }
+    },
+    "tvOS Device Support": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "tvOS Device Support"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prise en charge des appareils tvOS"
+          }
         }
       }
     },
@@ -2651,6 +5541,30 @@
           "stringUnit": {
             "state": "translated",
             "value": "you"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "vous"
+          }
+        }
+      }
+    },
+    "watchOS Device Support": {
+      "comment": "Name sent by the engine (English).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "watchOS Device Support"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prise en charge des appareils watchOS"
           }
         }
       }
@@ -2668,6 +5582,12 @@
             "state": "translated",
             "value": "Failed"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Échec"
+          }
         }
       }
     },
@@ -2677,6 +5597,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Safe items · Cautious level"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Éléments sûrs · niveau Prudent"
           }
         }
       }
@@ -2691,6 +5617,12 @@
             "state": "translated",
             "value": "Épurer has Full Disk Access"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Épurer a l'accès complet au disque"
+          }
         }
       }
     },
@@ -2700,6 +5632,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Épurer is on in Full Disk Access"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Épurer est activé dans l’accès complet au disque"
           }
         }
       }
@@ -2711,15 +5649,72 @@
             "state": "translated",
             "value": "Épurer will never scan or clean these paths."
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Épurer n'analysera ni ne nettoiera jamais ces chemins."
+          }
         }
       }
     },
-    "Épurer ne peut pas modifier ": {
+    "Épurer ne peut pas modifier %@ : %lld chemins hors de portée.": {
+      "comment": "Protected Paths note. The count only picks singular or plural.",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Épurer can’t change "
+            "value": "Épurer can’t change %1$@: %#@n@"
+          },
+          "substitutions": {
+            "n": {
+              "argNum": 2,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "this path is out of reach. No need to protect it."
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "these paths are out of reach. No need to protect them."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Épurer ne peut pas modifier %1$@ : %#@n@"
+          },
+          "substitutions": {
+            "n": {
+              "argNum": 2,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "ce chemin est hors de portée. Inutile de le protéger."
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "ces chemins sont hors de portée. Inutile de les protéger."
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -2729,7 +5724,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Épurer can now measure all your caches precisely."
+            "value": "Épurer can now measure all your caches accurately."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Épurer peut maintenant mesurer tous vos caches avec précision."
           }
         }
       }
@@ -2744,6 +5745,12 @@
             "state": "translated",
             "value": "‹ Estimate"
           }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "‹ Estimation"
+          }
         }
       }
     },
@@ -2752,7 +5759,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "‹ Go Up"
+            "value": "‹ Up"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "‹ Remonter"
           }
         }
       }

@@ -23,14 +23,25 @@ struct ContentView: View {
         }
         .foregroundStyle(Palette.ink)
         .font(.system(size: 13))
-        .background(AppBackground())
+        .background(AppBackground(scenery: scenery))
         .ignoresSafeArea()
-        .preferredColorScheme(.light)
         .task { await model.start() }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             Task { await model.refreshAccess() }
         }
         .errorAlert($model.errorMessage)
+    }
+
+    /// Clouds and hills on the hero screens, the plain gradient on list screens (n11).
+    private var scenery: Bool {
+        if model.engineMissing || model.showPermission { return true }
+        if model.preview != nil { return false }
+        switch model.destination {
+        case .home: return model.stage != .report && model.stage != .review
+        case .safeClean: return true
+        case .explorer, .projects: return false
+        case .protectedPaths: return protected.paths.isEmpty  // 11a keeps the scenery, the list does not
+        }
     }
 
     @ViewBuilder
@@ -96,9 +107,9 @@ struct Sidebar: View {
         .padding(.bottom, 24)
         .frame(width: 220, alignment: .leading)
         .frame(maxHeight: .infinity, alignment: .top)
-        .background(.white.opacity(0.55))
+        .background(Palette.sidebar)
         .overlay(alignment: .trailing) {
-            Rectangle().fill(Palette.accent.opacity(0.10)).frame(width: 1)
+            Rectangle().fill(Palette.sidebarEdge).frame(width: 1)
         }
     }
 
